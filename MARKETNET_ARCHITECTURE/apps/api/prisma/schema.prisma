@@ -1,0 +1,480 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum ShopStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  OUT_OF_STOCK
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  ARCHIVED
+}
+
+enum NotificationType {
+  ORDER
+  MESSAGE
+  REVIEW
+  SYSTEM
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  PRODUCT_SEARCH
+  PRODUCT_ADD_TO_CART
+  ORDER_CREATED
+  ORDER_PAID
+  ORDER_CANCELLED
+  MESSAGE_SENT
+  REVIEW_CREATED
+  SHOP_VIEW
+}
+
+enum PlatformSettingCategory {
+  GLOBAL
+  SHOP
+  PRODUCT
+  ORDER
+  SECURITY
+}
+
+enum PermissionScope {
+  GLOBAL
+  SHOP
+  PRODUCT
+  ORDER
+  USER
+}
+
+model User {
+  id               String       @id @default(cuid())
+  email            String       @unique
+  phone            String?
+  passwordHash     String
+  fullName         String
+  avatarUrl        String?
+  status           UserStatus   @default(ACTIVE)
+  isEmailVerified  Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  roles            UserRole[]
+  shops            Shop[]
+  orders           Order[]
+  sentMessages     Message[]    @relation("MessageSender")
+  receivedMessages Message[]    @relation("MessageReceiver")
+  reviews          Review[]
+  notifications    Notification[]
+  analyticsEvents  AnalyticsEvent[]
+  refreshTokens    RefreshToken[]
+
+  @@index([email])
+  @@index([status])
+  @@map("users")
+}
+
+model Role {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  slug        String          @unique
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String          @id @default(cuid())
+  key         String          @unique
+  resource    String
+  action      String
+  scope       PermissionScope @default(GLOBAL)
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  roles       RolePermission[]
+
+  @@index([resource, action])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId      String
+  permissionId String
+  createdAt   DateTime @default(now())
+
+  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model Shop {
+  id          String     @id @default(cuid())
+  ownerId     String
+  slug        String     @unique
+  name        String
+  slogan      String?
+  description String?
+  phone       String?
+  whatsapp    String?
+  email       String?
+  address     String?
+  city        String?
+  country     String?
+  latitude    Decimal?   @db.Decimal(10, 7)
+  longitude   Decimal?   @db.Decimal(10, 7)
+  logoUrl     String?
+  coverUrl    String?
+  status      ShopStatus @default(DRAFT)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  owner       User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  products    Product[]
+  orders      Order[]
+  reviews     Review[]
+  messages    Message[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([city])
+  @@map("shops")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  parentId    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@index([parentId])
+  @@index([isActive])
+  @@map("categories")
+}
+
+model Product {
+  id                    String    @id @default(cuid())
+  shopId                String
+  categoryId            String?
+  name                  String
+  slug                  String
+  shortDescription      String?
+  description           String?
+  priceCents            Int
+  compareAtPriceCents   Int?
+  stockQuantity         Int       @default(0)
+  sku                   String?   @unique
+  status                ProductStatus @default(DRAFT)
+  isPublished           Boolean   @default(false)
+  isFeatured            Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  shop                  Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category              Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  images                ProductImage[]
+  variants              ProductVariant[]
+  specifications       ProductSpecification[]
+  orderItems            OrderItem[]
+  reviews               Review[]
+  analyticsEvents       AnalyticsEvent[]
+
+  @@unique([shopId, slug])
+  @@index([shopId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([isPublished])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([isPrimary])
+  @@map("product_images")
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String
+  name        String
+  value       String
+  sku         String?
+  priceCents  Int?
+  stockQuantity Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+
+  @@index([productId])
+  @@index([isActive])
+  @@map("product_variants")
+}
+
+model ProductSpecification {
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_specifications")
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  userId           String?
+  shopId           String?
+  status           OrderStatus @default(PENDING)
+  subtotalCents    Int
+  shippingCents    Int         @default(0)
+  discountCents    Int         @default(0)
+  totalCents       Int
+  customerName     String
+  customerEmail    String?
+  customerPhone    String?
+  deliveryAddress  String?
+  deliveryCity     String?
+  deliveryCountry  String?
+  notes            String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user             User?       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  shop             Shop?       @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  items            OrderItem[]
+  messages         Message[]
+
+  @@index([userId])
+  @@index([shopId])
+  @@index([status])
+  @@map("orders")
+}
+
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  productId      String
+  productVariantId String?
+  name           String
+  quantity       Int
+  unitPriceCents Int
+  totalPriceCents Int
+  createdAt      DateTime @default(now())
+
+  order          Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Message {
+  id        String       @id @default(cuid())
+  shopId    String?
+  orderId   String?
+  senderId  String
+  receiverId String
+  subject   String?
+  content   String
+  status    MessageStatus @default(SENT)
+  isRead    Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  shop      Shop?        @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  order     Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  sender    User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User         @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([orderId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("messages")
+}
+
+model Review {
+  id        String      @id @default(cuid())
+  userId    String
+  shopId    String
+  productId String?
+  rating    Int
+  title     String?
+  comment   String?
+  status    ReviewStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shop      Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product   Product?    @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([shopId])
+  @@index([productId])
+  @@index([status])
+  @@map("reviews")
+}
+
+model Notification {
+  id                String          @id @default(cuid())
+  userId            String
+  type              NotificationType
+  title             String
+  message           String
+  isRead            Boolean         @default(false)
+  relatedEntityType String?
+  relatedEntityId   String?
+  createdAt         DateTime        @default(now())
+
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model AnalyticsEvent {
+  id           String            @id @default(cuid())
+  userId       String?
+  shopId       String?
+  productId    String?
+  eventType    AnalyticsEventType
+  sessionId    String?
+  ipHash       String?
+  metadata     Json?
+  createdAt    DateTime          @default(now())
+
+  user         User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  shop         Shop?             @relation(fields: [shopId], references: [id], onDelete: SetNull)
+  product      Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([eventType])
+  @@index([shopId])
+  @@index([productId])
+  @@index([userId])
+  @@map("analytics_events")
+}
+
+model PlatformSetting {
+  id          String                  @id @default(cuid())
+  key         String                  @unique
+  value       String
+  description String?
+  category    PlatformSettingCategory @default(GLOBAL)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@index([category])
+  @@map("platform_settings")
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  userId      String
+  tokenHash   String
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
