@@ -7,6 +7,21 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 function clearPrismaCache() {
   const prismaCacheDir = path.join(root, 'node_modules', '.prisma');
+  const clientDir = path.join(prismaCacheDir, 'client');
+
+  if (fs.existsSync(clientDir)) {
+    for (const entry of fs.readdirSync(clientDir)) {
+      if (entry.includes('.tmp') || entry.startsWith('query_engine-') && entry.includes('.tmp')) {
+        const tempPath = path.join(clientDir, entry);
+        try {
+          fs.unlinkSync(tempPath);
+        } catch (error) {
+          // Ignore temp-file cleanup errors; the main cache removal below is the real reset.
+        }
+      }
+    }
+  }
+
   if (!fs.existsSync(prismaCacheDir)) {
     return;
   }
@@ -37,7 +52,7 @@ function run(args) {
 }
 
 clearPrismaCache();
-run(['--workspace', 'apps/api', 'exec', '--', 'prisma', 'generate']);
+run(['--workspace', 'apps/api', 'run', 'prisma:generate']);
 run(['--workspace', 'apps/api', 'run', 'build']);
 run(['--workspace', 'apps/web', 'run', 'build']);
 
@@ -46,7 +61,7 @@ if (process.env.VERCEL_ENV === 'production') {
     throw new Error('DIRECT_URL is required for production Prisma migrations.');
   }
 
-  run(['--workspace', 'apps/api', 'exec', '--', 'prisma', 'migrate', 'deploy']);
+  run(['--workspace', 'apps/api', 'run', 'prisma:deploy']);
 } else {
   console.log('Skipping database migration: this is not a Vercel Production build.');
 }
