@@ -1,8 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { NestExpressApplication } from '@nestjs/platform-express';
-import { createApp } from '../../api/dist/bootstrap';
 
+type NestExpressApplication = any;
 type ExpressHandler = (request: IncomingMessage, response: ServerResponse) => void;
+
+async function getApp(): Promise<NestExpressApplication> {
+  const bootstrapModule = await (new Function(
+    'return import("../../../api/dist/bootstrap")',
+  )() as Promise<{ createApp: () => Promise<NestExpressApplication> }>);
+  return bootstrapModule.createApp();
+}
 
 let appPromise: Promise<NestExpressApplication> | undefined;
 
@@ -15,7 +21,7 @@ export default async function handler(
   response: ServerResponse,
 ): Promise<void> {
   try {
-    appPromise ??= createApp();
+    appPromise ??= getApp();
     const app = await appPromise;
     const expressHandler = app.getHttpAdapter().getInstance() as ExpressHandler;
 
