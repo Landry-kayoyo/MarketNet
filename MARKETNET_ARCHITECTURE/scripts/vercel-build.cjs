@@ -1,8 +1,16 @@
 const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+function clearPrismaCache() {
+  const prismaCacheDir = path.join(root, 'node_modules', '.prisma');
+  if (fs.existsSync(prismaCacheDir)) {
+    fs.rmSync(prismaCacheDir, { recursive: true, force: true });
+  }
+}
 
 function run(args) {
   const result = spawnSync(npm, args, {
@@ -16,7 +24,8 @@ function run(args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-run(['--workspace', 'apps/api', 'run', 'prisma:generate']);
+clearPrismaCache();
+run(['--workspace', 'apps/api', 'exec', '--', 'prisma', 'generate']);
 run(['--workspace', 'apps/api', 'run', 'build']);
 run(['--workspace', 'apps/web', 'run', 'build']);
 
@@ -25,7 +34,7 @@ if (process.env.VERCEL_ENV === 'production') {
     throw new Error('DIRECT_URL is required for production Prisma migrations.');
   }
 
-  run(['--workspace', 'apps/api', 'run', 'prisma:deploy']);
+  run(['--workspace', 'apps/api', 'exec', '--', 'prisma', 'migrate', 'deploy']);
 } else {
   console.log('Skipping database migration: this is not a Vercel Production build.');
 }
