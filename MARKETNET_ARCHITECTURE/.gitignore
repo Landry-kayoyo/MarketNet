@@ -7,3 +7,6 @@ dist
 !.env.production.example
 .DS_Store
 coverage
+
+.vercel
+.env*
