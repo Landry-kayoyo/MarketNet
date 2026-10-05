@@ -8,11 +8,11 @@
     "start": "node dist/main",
     "lint": "eslint . --ext .ts",
     "test": "jest",
-    "prisma:generate": "npx prisma generate",
-    "prisma:validate": "npx prisma validate",
-    "prisma:migrate": "npx prisma migrate dev --name init",
-    "prisma:deploy": "npx prisma migrate deploy",
-    "prisma:seed": "npx prisma db seed"
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
