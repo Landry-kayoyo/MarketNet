@@ -7,8 +7,20 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 function clearPrismaCache() {
   const prismaCacheDir = path.join(root, 'node_modules', '.prisma');
-  if (fs.existsSync(prismaCacheDir)) {
+  if (!fs.existsSync(prismaCacheDir)) {
+    return;
+  }
+
+  try {
     fs.rmSync(prismaCacheDir, { recursive: true, force: true });
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
+    if (code === 'EPERM' || code === 'EBUSY' || code === 'EACCES') {
+      console.warn('Skipping Prisma cache cleanup because the client is locked on this platform:', error.message);
+      return;
+    }
+
+    throw error;
   }
 }
 
