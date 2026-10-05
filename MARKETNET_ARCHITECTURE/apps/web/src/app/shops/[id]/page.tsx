@@ -51,12 +51,13 @@ const formatPrice = (cents: number) =>
     maximumFractionDigits: 0
   }).format(cents);
 
-export default async function ShopDetailPage({ params }: { params: { id: string } }) {
+export default async function ShopDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   let shop: Shop | null = null;
   let products: Product[] = [];
 
   try {
-    shop = await fetchPublicApi<Shop>(`/api/v1/shops/${params.id}`);
+    shop = await fetchPublicApi<Shop>(`/api/v1/shops/${id}`);
     products = await fetchPublicApi<Product[]>('/api/v1/products');
   } catch {
     notFound();

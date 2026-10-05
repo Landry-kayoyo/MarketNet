@@ -140,29 +140,21 @@ export default async function ProductsPage() {
       </main>
 
       <nav className="mobile-nav" aria-label="Navigation mobile">
-        <Link href="/" passHref legacyBehavior>
-          <button type="button">
-            <i className="bi bi-house-fill" aria-hidden="true" />
-            <span>Accueil</span>
-          </button>
+        <Link href="/">
+          <i className="bi bi-house-fill" aria-hidden="true" />
+          <span>Accueil</span>
         </Link>
-        <Link href="/products" passHref legacyBehavior>
-          <button type="button" className="active">
-            <i className="bi bi-grid" aria-hidden="true" />
-            <span>Produits</span>
-          </button>
+        <Link href="/products" className="active" aria-current="page">
+          <i className="bi bi-grid" aria-hidden="true" />
+          <span>Produits</span>
         </Link>
-        <Link href="/shops" passHref legacyBehavior>
-          <button type="button">
-            <i className="bi bi-shop" aria-hidden="true" />
-            <span>Boutiques</span>
-          </button>
+        <Link href="/shops">
+          <i className="bi bi-shop" aria-hidden="true" />
+          <span>Boutiques</span>
         </Link>
-        <Link href="/login" passHref legacyBehavior>
-          <button type="button">
-            <i className="bi bi-person-circle" aria-hidden="true" />
-            <span>Marchand</span>
-          </button>
+        <Link href="/login">
+          <i className="bi bi-person-circle" aria-hidden="true" />
+          <span>Marchand</span>
         </Link>
       </nav>
     </div>

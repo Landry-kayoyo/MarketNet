@@ -1,0 +1,1 @@
+- [PostCSS override verification](postcss-override-verification.md) — targeted npm workspace installs left Next's pinned PostCSS unchanged; verify with the dependency tree and audit.

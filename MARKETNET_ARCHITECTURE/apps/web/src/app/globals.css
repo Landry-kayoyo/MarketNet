@@ -3500,7 +3500,8 @@ p {
     padding-bottom: env(safe-area-inset-bottom);
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
   }
-  .mobile-nav button {
+  .mobile-nav button,
+  .mobile-nav a {
     border: 0;
     background: transparent;
     color: var(--color-text-3);
@@ -3512,8 +3513,10 @@ p {
     font-size: 10px;
     font-weight: var(--fw-bold);
     transition: color var(--duration-base) var(--ease-out);
+    text-decoration: none;
   }
-  .mobile-nav button.active { color: var(--color-primary); }
+  .mobile-nav button.active,
+  .mobile-nav a.active { color: var(--color-primary); }
   .mobile-nav i { font-size: 20px; }
 }
 
