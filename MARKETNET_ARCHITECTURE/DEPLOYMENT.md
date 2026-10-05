@@ -35,8 +35,9 @@ Cette commande applique uniquement les migrations versionnées. **Ne pas lancer 
 ## 3. Configurer l’unique projet Vercel
 
 1. Importer le dépôt Git dans Vercel une seule fois.
-2. Définir **Root Directory** sur `MARKETNET_ARCHITECTURE/apps/web`.
+2. Définir **Root Directory** sur `MARKETNET_ARCHITECTURE`, où se trouvent le `package.json` du monorepo et le script `vercel-build`.
 3. Garder le framework **Next.js**. Le fichier `vercel.json` lance le build du monorepo; il génère le client Prisma, compile NestJS, construit Next.js puis applique les migrations en Production uniquement.
+   Ne pas définir de répertoire de sortie personnalisé : Vercel doit traiter la sortie `.next` avec son intégration Next.js afin d’inclure le runtime serveur dans les fonctions.
 4. Ne créer ni projet Vercel séparé pour `apps/api`, ni service Docker.
 5. Déployer une fois que Supabase est migré et que les variables sont renseignées.
 
