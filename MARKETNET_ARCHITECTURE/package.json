@@ -7,9 +7,11 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npx concurrently \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm --workspace apps/web run dev",
     "dev:api": "npm --workspace apps/api run dev",
     "build:web": "npm --workspace apps/web run build",
-    "build:api": "npm --workspace apps/api run build"
+    "build:api": "npm --workspace apps/api run build",
+    "vercel-build": "node scripts/vercel-build.cjs"
   }
 }

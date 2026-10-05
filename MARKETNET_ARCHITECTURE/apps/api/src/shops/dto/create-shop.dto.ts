@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsOptional, IsString, Length } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, Length, MaxLength } from 'class-validator';
 import { ShopStatus } from '@prisma/client';
 
 export class CreateShopDto {
@@ -52,10 +52,12 @@ export class CreateShopDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(3_000_000)
   logoUrl?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(3_000_000)
   coverUrl?: string;
 
   @IsOptional()

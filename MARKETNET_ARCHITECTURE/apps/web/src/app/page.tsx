@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import Topbar from './components/Topbar';
+import HeroSearch from './components/HeroSearch';
+import HeroSlideshow from './components/HeroSlideshow';
+import ScrollReveal from './components/ScrollReveal';
 import { fetchPublicApi } from '@/lib/api';
 
 type Shop = {
@@ -41,7 +44,7 @@ const formatPrice = (cents: number) =>
     style: 'currency',
     currency: 'CDF',
     maximumFractionDigits: 0,
-  }).format(cents);
+  }).format(cents / 100);
 
 const CAT_ICONS = [
   'bi-phone', 'bi-bag', 'bi-house', 'bi-laptop',
@@ -83,16 +86,25 @@ export default async function HomePage() {
   }
 
   const featuredProducts = products.slice(0, 8);
-  const featuredShops    = shops.slice(0, 3);
+  const featuredShops    = shops.slice(0, 6);
+  const searchSuggestions = [...new Set([
+    ...featuredProducts.map((product) => product.name),
+    ...categories.map((category) => category.name),
+  ])].slice(0, 8);
 
   return (
     <div className="app public-app">
+      <ScrollReveal />
       <Topbar activeNav="home" />
 
       <main className="content" id="main-content">
 
         {/* ── Hero ── */}
-        <section className="hero home-hero" aria-label="Bienvenue sur MarketNet">
+        <section
+          className="hero home-hero"
+          aria-label="Bienvenue sur MarketNet"
+        >
+          <HeroSlideshow />
           <div className="home-hero-content">
             <span className="home-hero-kicker">
               <i className="bi bi-geo-alt-fill" aria-hidden="true" />
@@ -106,17 +118,7 @@ export default async function HomePage() {
               Découvrez les boutiques et les produits près de chez vous.
               Commandez directement via WhatsApp.
             </p>
-            <div className="hero-search" role="search">
-              <i className="bi bi-search home-search-icon" aria-hidden="true" />
-              <input
-                type="search"
-                placeholder="Rechercher un produit, une boutique…"
-                aria-label="Rechercher sur MarketNet"
-              />
-              <Link href="/products" className="btn primary" style={{ whiteSpace: 'nowrap' }}>
-                Rechercher
-              </Link>
-            </div>
+            <HeroSearch suggestions={searchSuggestions} />
             <Link href="/register" className="home-merchant-cta">
               Vous êtes commerçant ? Créer ma boutique gratuitement{' '}
               <i className="bi bi-arrow-up-right" aria-hidden="true" />
@@ -125,7 +127,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── Trust strip ── */}
-        <section className="home-trust-strip" aria-label="MarketNet en chiffres">
+        <section className="home-trust-strip" aria-label="MarketNet en chiffres" data-reveal data-reveal-delay="100">
           <div className="home-trust-item">
             <i className="bi bi-shop-window" aria-hidden="true" />
             <span>
@@ -151,7 +153,7 @@ export default async function HomePage() {
 
         {/* ── Catégories ── */}
         {categories.length > 0 && (
-          <section className="section home-categories" aria-labelledby="cat-heading">
+          <section className="section home-categories" aria-labelledby="cat-heading" data-reveal data-reveal-delay="0">
             <div className="section-head">
               <div>
                 <span className="eyebrow">Explorer</span>
@@ -160,18 +162,17 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="cat-grid">
-              {categories.slice(0, 6).map((cat, i) => (
+              {categories.slice(0, 8).map((cat, i) => (
                 <Link
                   key={cat.id}
                   href={`/products?category=${cat.slug}`}
                   className="cat"
                   aria-label={`Catégorie : ${cat.name}`}
+                  data-reveal
+                  data-reveal-delay={String(i * 60)}
                 >
                   <i className={`bi ${CAT_ICONS[i % CAT_ICONS.length]}`} aria-hidden="true" />
                   <strong>{cat.name}</strong>
-                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
-                    {products.filter((p) => p.status === 'ACTIVE').length} produits
-                  </div>
                 </Link>
               ))}
             </div>
@@ -180,7 +181,7 @@ export default async function HomePage() {
 
         {/* ── Produits à découvrir ── */}
         <section className="section home-products-section" id="productsSection" aria-labelledby="prod-heading">
-          <div className="section-head">
+          <div className="section-head" data-reveal>
             <div>
               <span className="home-section-eyebrow">Sélection MarketNet</span>
               <h2 id="prod-heading">Produits à découvrir</h2>
@@ -192,7 +193,7 @@ export default async function HomePage() {
           </div>
 
           {featuredProducts.length === 0 ? (
-            <div className="state-box">
+            <div className="state-box" data-reveal>
               <i className="bi bi-box-seam" style={{ fontSize: 36, color: 'var(--color-text-disabled)', marginBottom: 14, display: 'block' }} aria-hidden="true" />
               <strong style={{ display: 'block', color: 'var(--color-text)', marginBottom: 6, fontSize: 'var(--text-base)' }}>
                 Aucun produit pour le moment
@@ -202,21 +203,20 @@ export default async function HomePage() {
               </p>
             </div>
           ) : (
-            <div className="product-grid" id="homeProducts">
-              {featuredProducts.map((product) => {
-                const imgSrc = product.images?.find((i) => i.isPrimary)?.url ?? product.images?.[0]?.url ?? null;
+            <div className="product-grid home-product-grid" id="homeProducts">
+              {featuredProducts.map((product, i) => {
+                const imgSrc = product.images?.find((img) => img.isPrimary)?.url ?? product.images?.[0]?.url ?? null;
                 return (
                   <Link
                     key={product.id}
                     href={`/products/${product.id}`}
                     style={{ textDecoration: 'none', color: 'inherit' }}
                     aria-label={`Voir ${product.name}`}
+                    data-reveal
+                    data-reveal-delay={String((i % 4) * 80)}
                   >
                     <article className="product-card">
-                      <div
-                        className="product-media"
-                        style={imgSrc ? { ['--media-bg' as string]: `url(${imgSrc})` } : {}}
-                      >
+                      <div className="product-media">
                         {imgSrc ? (
                           <img
                             src={imgSrc}
@@ -225,23 +225,29 @@ export default async function HomePage() {
                             decoding="async"
                           />
                         ) : (
-                          <div style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            height: '100%', color: 'var(--color-text-disabled)', flexDirection: 'column', gap: 8,
-                          }} aria-hidden="true">
-                            <i className="bi bi-image" style={{ fontSize: 32 }} />
-                            <span style={{ fontSize: 11 }}>Aucune photo</span>
+                          <div className="product-media-empty" aria-hidden="true">
+                            <i className="bi bi-image" />
+                            <span>Aucune photo</span>
                           </div>
+                        )}
+                        {product.stockQuantity === 0 && (
+                          <span className="product-badge sold-out">Rupture</span>
+                        )}
+                        {product.isFeatured && product.stockQuantity > 0 && (
+                          <span className="product-badge featured">Vedette</span>
                         )}
                       </div>
                       <div className="product-body">
-                        <span className="tag">Produit</span>
                         <h3>{product.name}</h3>
-                        <div className="product-shopline">
-                          <i className="bi bi-shop" aria-hidden="true" />
-                          <span>Boutique MarketNet</span>
+                        {product.shortDescription && (
+                          <p className="product-desc">{product.shortDescription}</p>
+                        )}
+                        <div className="product-footer">
+                          <div className="price">{formatPrice(product.priceCents)}</div>
+                          <button className="product-cta" aria-label={`Commander ${product.name}`}>
+                            <i className="bi bi-whatsapp" />
+                          </button>
                         </div>
-                        <div className="price">{formatPrice(product.priceCents)}</div>
                       </div>
                     </article>
                   </Link>
@@ -253,19 +259,19 @@ export default async function HomePage() {
 
         {/* ── Boutiques ── */}
         <section className="section" id="shopsSection" aria-labelledby="shops-heading">
-          <div className="section-head">
+          <div className="section-head" data-reveal>
             <div>
               <span className="home-section-eyebrow">Les commerçants d&apos;ici</span>
               <h2 id="shops-heading">Boutiques à découvrir</h2>
               <p>Rencontrez les boutiques locales et trouvez votre prochain coup de cœur.</p>
             </div>
-            <span className="home-shop-total">
-              <i className="bi bi-shop-window" aria-hidden="true" /> {shops.length} boutiques
-            </span>
+            <Link href="/shops" className="btn">
+              Voir toutes <i className="bi bi-arrow-right" aria-hidden="true" />
+            </Link>
           </div>
 
           {featuredShops.length === 0 ? (
-            <div className="state-box">
+            <div className="state-box" data-reveal>
               <i className="bi bi-shop" style={{ fontSize: 36, color: 'var(--color-text-disabled)', marginBottom: 14, display: 'block' }} aria-hidden="true" />
               <strong style={{ display: 'block', color: 'var(--color-text)', marginBottom: 6, fontSize: 'var(--text-base)' }}>
                 Aucune boutique publiée
@@ -276,84 +282,44 @@ export default async function HomePage() {
             </div>
           ) : (
             <div className="home-shop-grid">
-              {featuredShops.map((shop) => {
-                const shopProds = products.filter((p) => p.shopId === shop.id);
-                return (
-                  <article key={shop.id} className="home-shop-card">
-                    <div className="home-shop-media">
-                      {shop.coverUrl && (
-                        <img
-                          src={shop.coverUrl}
-                          alt={`Couverture de ${shop.name}`}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      )}
-                      <span className="home-shop-location">
-                        <i className="bi bi-geo-alt-fill" aria-hidden="true" />
-                        {' '}{shop.city ?? 'RDC'}
-                      </span>
-                      <span className="home-shop-logo" aria-hidden="true">
-                        {shop.logoUrl ? (
-                          <img src={shop.logoUrl} alt={`Logo de ${shop.name}`} />
-                        ) : (
-                          <i className="bi bi-shop" />
-                        )}
-                      </span>
-                    </div>
-                    <div className="home-shop-content">
-                      <div className="home-shop-heading">
-                        <h3>{shop.name}</h3>
-                        <span className="home-shop-count">{shopProds.length} produits</span>
-                      </div>
-                      <p>{shop.slogan ?? shop.description ?? 'Une boutique locale à découvrir.'}</p>
-                      <div className="home-shop-bottom">
-                        <div className="home-shop-tags">
-                          <span style={{ fontWeight: 'var(--fw-bold)' }}>
-                            {shop.city ?? 'RDC'}
-                          </span>
-                        </div>
-                        <Link href={`/shops/${shop.id}`} className="home-shop-link">
-                          Découvrir <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              {featuredShops.map((shop, i) => (
+                <Link
+                  key={shop.id}
+                  href={`/shops/${shop.id}`}
+                  className="home-shop-card home-shop-card-compact home-shop-card-textonly"
+                  data-reveal
+                  data-reveal-delay={String((i % 3) * 100)}
+                  aria-label={`Voir la boutique ${shop.name}`}
+                >
+                  <div className="home-shop-content home-shop-content-compact">
+                    <h3>{shop.name}</h3>
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
         </section>
 
         {/* ── Pourquoi MarketNet ── */}
-        <section className="section" aria-labelledby="features-heading" style={{ marginTop: 'var(--space-10)' }}>
+        <section className="section features-section" aria-labelledby="features-heading" data-reveal>
           <div className="section-head" style={{ textAlign: 'center', flexDirection: 'column', alignItems: 'center' }}>
             <span className="eyebrow">Pour les commerçants</span>
             <h2 id="features-heading">Développez votre activité</h2>
             <p>MarketNet vous donne les outils pour vendre plus, sans frais fixes.</p>
           </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: 'var(--space-5)',
-          }}>
-            {FEATURES.map((f) => (
-              <div key={f.title} className="panel" style={{ textAlign: 'center' }}>
-                <div style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 'var(--radius-lg)',
-                  background: 'var(--color-primary-muted)',
-                  color: 'var(--color-primary)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontSize: 26,
-                  margin: '0 auto var(--space-4)',
-                }} aria-hidden="true">
+          <div className="features-grid">
+            {FEATURES.map((f, i) => (
+              <div
+                key={f.title}
+                className="feature-card panel"
+                data-reveal
+                data-reveal-delay={String(i * 120)}
+              >
+                <div className="feature-icon" aria-hidden="true">
                   <i className={`bi ${f.icon}`} />
                 </div>
-                <h3 style={{ marginBottom: 'var(--space-2)', fontSize: 'var(--text-base)' }}>{f.title}</h3>
-                <p style={{ fontSize: 'var(--text-sm)', margin: 0 }}>{f.desc}</p>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
               </div>
             ))}
           </div>

@@ -76,6 +76,7 @@ export class ShopService {
       country: shop.country ?? null,
       logoUrl: shop.logoUrl ?? null,
       coverUrl: shop.coverUrl ?? null,
+      branding: shop.branding ?? null,
       status: shop.status,
       createdAt: shop.createdAt,
       updatedAt: shop.updatedAt,
@@ -97,6 +98,7 @@ export class ShopService {
       country: shop.country ?? null,
       logoUrl: shop.logoUrl ?? null,
       coverUrl: shop.coverUrl ?? null,
+      branding: shop.branding ?? null,
       status: shop.status,
     };
   }
@@ -203,6 +205,7 @@ export class ShopService {
         country: dto.country !== undefined ? dto.country.trim() || null : undefined,
         logoUrl: dto.logoUrl !== undefined ? dto.logoUrl.trim() || null : undefined,
         coverUrl: dto.coverUrl !== undefined ? dto.coverUrl.trim() || null : undefined,
+        branding: dto.branding !== undefined ? dto.branding : undefined,
         status: dto.status ?? undefined,
       },
     });

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiRegister, saveTokens } from '@/lib/api';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
+
 const STEPS = [
   { id: 1, label: 'Identité' },
   { id: 2, label: 'Sécurité' },
@@ -45,6 +47,24 @@ export default function RegisterPage() {
         phone: form.phone || undefined,
       });
       saveTokens(tokens);
+      
+      // CREATE THE SHOP
+      if (form.shopName) {
+        await fetch(`${API_BASE}/api/v1/shops`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokens.accessToken}`
+          },
+          body: JSON.stringify({
+            name: form.shopName,
+            city: form.city || undefined,
+            slug: form.shopName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            status: 'PUBLISHED',
+          })
+        });
+      }
+
       router.push('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'inscription.');

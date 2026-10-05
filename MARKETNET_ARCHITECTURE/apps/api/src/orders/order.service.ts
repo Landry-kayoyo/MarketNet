@@ -210,7 +210,11 @@ export class OrderService {
   }
 
   private formatCurrencyCents(value: number) {
-    return `${(value / 100).toLocaleString('fr-CD', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} CDF`;
+    return new Intl.NumberFormat('fr-CD', {
+      style: 'currency',
+      currency: 'CDF',
+      maximumFractionDigits: 0,
+    }).format(value / 100);
   }
 
   private normalizeWhatsAppNumber(value?: string | null) {
@@ -516,6 +520,7 @@ export class OrderService {
     return this.prisma.$transaction(async (tx: any) => {
       let subtotalCents = 0;
       let shopId: string | null = null;
+      let orderShop: { id: string; name: string; whatsapp: string } | null = null;
       const normalizedItems: Array<{
         productId: string;
         productVariantId: string | null;
@@ -540,6 +545,16 @@ export class OrderService {
           throw new BadRequestException(`Le produit "${product.name}" n'est plus disponible.`);
         }
 
+        if (shopId && shopId !== product.shopId) {
+          throw new BadRequestException('Veuillez passer une commande par boutique afin de contacter le bon commerçant sur WhatsApp.');
+        }
+        const whatsapp = this.normalizeWhatsAppNumber(product.shop?.whatsapp);
+        if (!whatsapp) {
+          throw new BadRequestException(`La boutique ${product.shop?.name ?? ''} n'a pas configuré de numéro WhatsApp valide.`);
+        }
+        shopId = product.shopId;
+        orderShop = { id: product.shopId, name: product.shop.name, whatsapp };
+
         const variant = item.productVariantId
           ? (product.variants.find((v: any) => v.id === item.productVariantId) ?? null)
           : null;
@@ -556,8 +571,6 @@ export class OrderService {
         const unitPriceCents = variant?.priceCents ?? product.priceCents;
         const totalPriceCents = unitPriceCents * item.quantity;
         subtotalCents += totalPriceCents;
-        if (!shopId) shopId = product.shopId;
-
         normalizedItems.push({
           productId: product.id,
           productVariantId: variant?.id ?? null,
@@ -638,6 +651,13 @@ export class OrderService {
         items: normalizedItems,
         subtotalCents,
         totalCents,
+        whatsappUrl: `https://wa.me/${orderShop!.whatsapp.replace(/^\+/, '')}?text=${encodeURIComponent(this.buildWhatsAppMessage({
+          ...order,
+          shop: orderShop,
+          items: normalizedItems,
+          subtotalCents,
+          totalCents,
+        }))}`,
       };
     });
   }

@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
 export async function fetchPublicApi<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -95,7 +95,14 @@ export async function fetchAuthedApi<T>(path: string, accessToken: string): Prom
   });
 
   if (!res.ok) {
-    const message = await res.text();
+    let message = await res.text();
+    try {
+      const json = JSON.parse(message);
+      message = Array.isArray(json.message) ? json.message.join(', ') : (json.message || message);
+      if (res.status === 401) {
+        message = 'Votre session a expiré. Veuillez vous reconnecter.';
+      }
+    } catch (e) {}
     throw new Error(message || `Request failed with status ${res.status}`);
   }
 
@@ -119,9 +126,12 @@ export async function mutateAuthedApi<T>(
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    const message = Array.isArray(data?.message)
+    let message = Array.isArray(data?.message)
       ? data.message.join(', ')
       : (data?.message ?? `Request failed with status ${res.status}`);
+    if (res.status === 401) {
+      message = 'Votre session a expiré. Veuillez vous reconnecter.';
+    }
     throw new Error(message);
   }
 

@@ -14,10 +14,17 @@ Ce dossier constitue le socle technique du projet MARKETNET, construit à partir
 
 - Frontend: Next.js + TypeScript + React
 - Backend API: NestJS + TypeScript
-- Base de données: PostgreSQL 16
+- Base de données: PostgreSQL 16 hébergé sur Supabase
 - ORM: Prisma
 - Authentification: JWT + refresh tokens + RBAC
 - Sécurité: validation serveur, permissions, logs et contrôle d’accès
+
+## Hébergement V1
+
+- Un seul projet Vercel sert le frontend Next.js et l’API NestJS via une fonction serverless sur `/api/*`.
+- Supabase héberge PostgreSQL; Prisma gère les migrations et l’accès aux données.
+- Aucun Docker et aucun projet Vercel API distinct.
+- Les étapes de configuration et les variables d’environnement sont dans [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Structure proposée
 

@@ -138,6 +138,50 @@ describe('OrderService', () => {
     expect(prisma.order.create).toHaveBeenCalled();
   });
 
+  it('creates a guest order with a prefilled WhatsApp link to the shop', async () => {
+    (prisma.product.findUnique as jest.Mock).mockResolvedValue({
+      id: 'product_1',
+      shopId: 'shop_1',
+      name: 'T-shirt Premium',
+      priceCents: 2500,
+      stockQuantity: 12,
+      status: 'ACTIVE',
+      isPublished: true,
+      shop: { id: 'shop_1', name: 'Boutique Élan', whatsapp: '+243970000000', status: 'PUBLISHED' },
+      variants: [],
+    });
+    (prisma.order.create as jest.Mock).mockResolvedValue({
+      id: 'order_wa_12345678',
+      shopId: 'shop_1',
+      status: 'PENDING',
+      subtotalCents: 5000,
+      totalCents: 5000,
+      customerName: 'Client Test',
+      customerPhone: '+243990000001',
+      deliveryAddress: 'Quartier Kenya',
+      deliveryCity: 'Lubumbashi',
+      notes: 'Livraison rapide',
+    });
+    (prisma.orderItem.createMany as jest.Mock).mockResolvedValue({ count: 1 });
+    (prisma.product.update as jest.Mock).mockResolvedValue({ id: 'product_1', stockQuantity: 10 });
+
+    const result = await service.guestCheckout({
+      items: [{ productId: 'product_1', quantity: 2 }],
+      customerName: 'Client Test',
+      customerPhone: '+243990000001',
+      deliveryAddress: 'Quartier Kenya',
+      deliveryCity: 'Lubumbashi',
+      notes: 'Livraison rapide',
+    });
+
+    expect(result.whatsappUrl).toContain('https://wa.me/243970000000?text=');
+    const message = new URL(result.whatsappUrl).searchParams.get('text')?.replace(/\s+/g, ' ') ?? '';
+    expect(message).toContain('2 x T-shirt Premium');
+    expect(message).toContain('Client Test');
+    expect(message).toContain('Livraison rapide');
+    expect(message).toContain('50 FC');
+  });
+
   it('generates a WhatsApp message for a valid order with persisted shop and client details', async () => {
     const orderPayload = {
       id: 'order_2',

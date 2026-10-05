@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 const STORAGE_KEY = 'mn_cart';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ interface CartCtx {
   updateQty: (productId: string, qty: number) => void;
   removeItem: (productId: string) => void;
   clearCart: () => void;
-  checkout: (data: CheckoutData) => Promise<{ id: string; reference: string }>;
+  checkout: (data: CheckoutData) => Promise<{ id: string; reference: string; whatsappUrl: string }>;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     persist([]);
   }, [persist]);
 
-  const checkout = useCallback(async (data: CheckoutData): Promise<{ id: string; reference: string }> => {
+  const checkout = useCallback(async (data: CheckoutData): Promise<{ id: string; reference: string; whatsappUrl: string }> => {
     const current = load();
     if (!current.length) throw new Error('Le panier est vide.');
 
@@ -121,9 +121,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const msg = Array.isArray(json?.message) ? json.message.join(', ') : (json?.message ?? `Erreur ${res.status}`);
       throw new Error(msg);
     }
+    if (!json.whatsappUrl) {
+      throw new Error('La boutique ne dispose pas d’un lien WhatsApp valide pour recevoir cette commande.');
+    }
 
     persist([]);
-    return { id: json.id, reference: json.reference ?? '' };
+    return { id: json.id, reference: json.reference ?? '', whatsappUrl: json.whatsappUrl };
   }, [persist]);
 
   const totalCents = items.reduce((s, i) => s + i.priceCents * i.quantity, 0);
@@ -145,7 +148,7 @@ export function useCart() {
 // ── Formatter ────────────────────────────────────────────────────────────────
 
 const fmt = (cents: number) =>
-  new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', maximumFractionDigits: 0 }).format(cents);
+  new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', maximumFractionDigits: 0 }).format(cents / 100);
 
 // ── Cart Drawer ──────────────────────────────────────────────────────────────
 
@@ -156,6 +159,7 @@ export function CartDrawer() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', city: '', notes: '' });
   const [err, setErr] = useState('');
   const [orderRef, setOrderRef] = useState('');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
 
   // Reset step when drawer closes
   const handleClose = () => { setOpen(false); setTimeout(() => { if (step === 'success') setStep('cart'); }, 400); };
@@ -179,7 +183,9 @@ export function CartDrawer() {
         notes: form.notes || undefined,
       });
       setOrderRef(order.reference || order.id.slice(-8).toUpperCase());
+      setWhatsappUrl(order.whatsappUrl);
       setStep('success');
+      window.location.assign(order.whatsappUrl);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : 'Erreur lors de la commande.');
     } finally {
@@ -218,7 +224,12 @@ export function CartDrawer() {
                 <i className="bi bi-check-circle" />
               </div>
               <h3>Commande passée !</h3>
-              <p>Le commerçant vous contactera bientôt pour confirmer et organiser la livraison.</p>
+              <p>Votre commande est prête. WhatsApp s’ouvre avec le message déjà rempli pour le commerçant.</p>
+              {whatsappUrl && (
+                <a className="btn primary" href={whatsappUrl}>
+                  <i className="bi bi-whatsapp" /> Ouvrir WhatsApp
+                </a>
+              )}
               <button className="btn primary" onClick={() => { handleClose(); setStep('cart'); }}>
                 Continuer mes achats
               </button>

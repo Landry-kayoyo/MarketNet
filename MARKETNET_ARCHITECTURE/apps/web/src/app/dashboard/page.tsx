@@ -1,38 +1,130 @@
-import Link from 'next/link';
-import type { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Tableau de bord — MarketNet',
-  description: 'Gérez votre boutique, vos produits et vos commandes depuis votre espace commerçant.',
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { fetchAuthedApi, getAccessToken, mutateAuthedApi } from '@/lib/api';
+
+type Shop = { id: string; name: string; slug: string; status: string };
+type Product = {
+  id: string;
+  name: string;
+  priceCents: number;
+  stockQuantity: number;
+  status: string;
+  isPublished: boolean;
+};
+type Message = {
+  id: string;
+  shopId: string | null;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  sender: { fullName: string } | null;
 };
 
-const MOCK_PRODUCTS = [
-  { name: 'Robe Élégance',   price: '45 000 FC', stock: 12, status: 'live' as const },
-  { name: 'Sac Premium',     price: '35 000 FC', stock: 7,  status: 'live' as const },
-  { name: 'Chaussures Cuir', price: '28 500 FC', stock: 3,  status: 'live' as const },
-  { name: 'Montre Classic',  price: '62 000 FC', stock: 0,  status: 'hidden' as const },
-];
-
-const MOCK_MESSAGES = [
-  { initials: 'AK', name: 'Aisha Kamara',  text: 'Je voudrais commander la robe rouge…', time: '2 min', color: '' },
-  { initials: 'FM', name: 'Fatou M.',       text: 'Le sac est-il disponible en noir ?',   time: '15 min', color: 'var(--amber-100)' },
-];
-
-const KPI_DATA = [
-  { label: 'Produits', value: '12', icon: 'bi-box-seam',  delta: '+2 ce mois', up: true },
-  { label: 'En ligne',  value: '10', icon: 'bi-eye',       delta: '83% du catalogue', up: true },
-  { label: 'Visites',   value: '184', icon: 'bi-graph-up', delta: '+24 cette semaine', up: true },
-  { label: 'WhatsApp',  value: '37', icon: 'bi-whatsapp',  delta: '+8 aujourd\'hui', up: true },
-];
+const formatPrice = (priceCents: number) =>
+  new Intl.NumberFormat('fr-CD', {
+    style: 'currency',
+    currency: 'CDF',
+    maximumFractionDigits: 0,
+  }).format(priceCents / 100);
 
 export default function DashboardHomePage() {
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [recentMessages, setRecentMessages] = useState<Message[]>([]);
+  const [messagesError, setMessagesError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const token = getAccessToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const [ownedShops, currentUser] = await Promise.all([
+          fetchAuthedApi<Shop[]>('/api/v1/shops/me', token),
+          fetchAuthedApi<{ id: string }>('/api/v1/auth/me', token),
+        ]);
+        const ownedShop = ownedShops[0] ?? null;
+        setShop(ownedShop);
+
+        if (ownedShop) {
+          try {
+            const shopProducts = await fetchAuthedApi<Product[]>(`/api/v1/products/shop/${ownedShop.id}`, token);
+            setProducts(shopProducts);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+
+        try {
+          const messages = await fetchAuthedApi<Message[]>('/api/v1/messages', token);
+          const ownedShopIds = new Set(ownedShops.map((ownedShop) => ownedShop.id));
+          setRecentMessages(messages
+            .filter((message) =>
+              message.id !== 'message-demo-001'
+              && message.receiverId === currentUser.id
+              && message.shopId
+              && ownedShopIds.has(message.shopId),
+            )
+            .slice(0, 2));
+        } catch (err) {
+          console.error(err);
+          setMessagesError(true);
+        }
+      } catch (err) {
+        console.error(err);
+        setMessagesError(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  async function publishShop() {
+    const token = getAccessToken();
+    if (!token || !shop) return;
+    try {
+      await mutateAuthedApi(`/api/v1/shops/${shop.id}/status`, token, 'PATCH', { status: 'PUBLISHED' });
+      setShop(prev => prev ? { ...prev, status: 'PUBLISHED' } : null);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const totalProducts = products.length;
+  const liveProducts = products.filter(p => p.isPublished && p.status === 'ACTIVE').length;
+  const livePercent = totalProducts > 0 ? Math.round((liveProducts / totalProducts) * 100) : 0;
+
+  const KPI_DATA = [
+    { label: 'Produits', value: totalProducts.toString(), icon: 'bi-box-seam',  delta: 'Dans votre boutique', up: true },
+    { label: 'En ligne',  value: liveProducts.toString(), icon: 'bi-eye',       delta: `${livePercent}% du catalogue`, up: true },
+    { label: 'Visites',   value: '—', icon: 'bi-graph-up', delta: 'Bientôt disponible', up: true },
+    { label: 'WhatsApp',  value: '—', icon: 'bi-whatsapp',  delta: 'Bientôt disponible', up: true },
+  ];
+
+  if (loading) {
+    return (
+      <div className="page-head dashboard-head">
+        <div>
+          <h1>Chargement...</h1>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* ── En-tête ── */}
       <div className="page-head dashboard-head">
         <div>
           <h1>Bonjour</h1>
-          <p>Ma Boutique · votre activité en un coup d&apos;œil.</p>
+          <p>{shop ? `${shop.name} · votre activité en un coup d'œil.` : 'Ma Boutique · votre activité en un coup d\'œil.'}</p>
         </div>
         <Link href="/dashboard/products" className="btn primary">
           <i className="bi bi-plus-lg" aria-hidden="true" />
@@ -40,7 +132,27 @@ export default function DashboardHomePage() {
         </Link>
       </div>
 
-      {/* ── KPIs ── */}
+      {/* Banner: boutique non publiée */}
+      {shop && shop.status !== 'PUBLISHED' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+          padding: '14px 20px', borderRadius: 14, marginBottom: 16,
+          background: 'linear-gradient(115deg, #fffbea, #fff3cd)',
+          border: '1.5px solid #f5c518', boxShadow: '0 3px 12px rgba(245,197,24,0.15)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <i className="bi bi-exclamation-triangle-fill" style={{ color: '#d97706', fontSize: 20 }} />
+            <div>
+              <strong style={{ display: 'block', fontSize: 14 }}>Votre boutique n&apos;est pas encore visible</strong>
+              <span style={{ fontSize: 12, color: '#92400e' }}>Elle est en brouillon. Publiez-la pour qu&apos;elle apparaisse sur la marketplace.</span>
+            </div>
+          </div>
+          <button className="btn" style={{ background: '#d97706', color: 'white', borderColor: '#d97706', whiteSpace: 'nowrap' }} onClick={publishShop}>
+            <i className="bi bi-send" /> Publier maintenant
+          </button>
+        </div>
+      )}
+
       <div className="kpis" role="region" aria-label="Indicateurs clés">
         {KPI_DATA.map((kpi) => (
           <div key={kpi.label} className="kpi">
@@ -57,10 +169,7 @@ export default function DashboardHomePage() {
         ))}
       </div>
 
-      {/* ── Grille principale ── */}
       <div className="dash-grid">
-
-        {/* Produits récents */}
         <section className="panel" aria-labelledby="recent-products-title">
           <div className="head">
             <div>
@@ -83,37 +192,45 @@ export default function DashboardHomePage() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_PRODUCTS.map((p) => (
-                  <tr key={p.name}>
+                {products.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
+                      Aucun produit trouvé.
+                    </td>
+                  </tr>
+                )}
+                {products.slice(0, 5).map((p) => (
+                  <tr key={p.id}>
                     <td>
                       <strong style={{ color: 'var(--color-text)', fontWeight: 'var(--fw-semi)' }}>
                         {p.name}
                       </strong>
                     </td>
                     <td style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--fw-bold)', color: 'var(--color-text)' }}>
-                      {p.price}
+                      {formatPrice(p.priceCents)}
                     </td>
                     <td>
                       <span style={{
-                        color: p.stock === 0 ? 'var(--color-danger-text)' : p.stock < 5 ? 'var(--color-warning-text)' : 'var(--color-text-2)',
+                        color: p.stockQuantity === 0 ? 'var(--color-danger-text)' : p.stockQuantity < 5 ? 'var(--color-warning-text)' : 'var(--color-text-2)',
                         fontWeight: 'var(--fw-semi)',
                       }}>
-                        {p.stock === 0 ? '— Rupture' : p.stock}
+                        {p.stockQuantity === 0 ? '— Rupture' : p.stockQuantity}
                       </span>
                     </td>
                     <td>
-                      <span className={`status ${p.status}`}>
-                        <span className={`badge-dot ${p.status === 'live' ? 'success' : 'neutral'}`} aria-hidden="true" />
-                        {p.status === 'live' ? 'En ligne' : 'Hors ligne'}
+                      <span className={`status ${p.isPublished && p.status === 'ACTIVE' ? 'live' : 'hidden'}`}>
+                        <span className={`badge-dot ${p.isPublished && p.status === 'ACTIVE' ? 'success' : 'neutral'}`} aria-hidden="true" />
+                        {p.isPublished && p.status === 'ACTIVE' ? 'En ligne' : 'Hors ligne'}
                       </span>
                     </td>
                     <td>
-                      <button
+                      <Link
+                        href="/dashboard/products"
                         className="btn sm ghost icon-only"
                         aria-label={`Modifier ${p.name}`}
                       >
                         <i className="bi bi-pencil" aria-hidden="true" />
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -122,10 +239,7 @@ export default function DashboardHomePage() {
           </div>
         </section>
 
-        {/* Accès rapide + Messages */}
         <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
-
-          {/* Accès rapide */}
           <section className="panel" aria-labelledby="quick-access-title">
             <div className="head">
               <div>
@@ -153,7 +267,6 @@ export default function DashboardHomePage() {
             </div>
           </section>
 
-          {/* Messages récents */}
           <section className="panel" aria-labelledby="messages-title">
             <div className="head">
               <div>
@@ -165,32 +278,35 @@ export default function DashboardHomePage() {
               </Link>
             </div>
             <div role="list">
-              {MOCK_MESSAGES.map((msg) => (
-                <div key={msg.name} className="message" role="listitem">
-                  <div
-                    className="avatar"
-                    style={msg.color ? { background: msg.color, color: 'var(--color-warning-text)' } : {}}
-                    aria-hidden="true"
-                  >
-                    {msg.initials}
+              {messagesError ? (
+                <p className="muted" role="status">Impossible de charger les messages pour le moment.</p>
+              ) : recentMessages.length === 0 ? (
+                <p className="muted" role="status">Aucun message client reçu pour le moment.</p>
+              ) : recentMessages.map((message) => {
+                const name = message.sender?.fullName || 'Client';
+                const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+                return (
+                  <div key={message.id} className="message" role="listitem">
+                    <div className="avatar" aria-hidden="true">{initials}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <strong style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text)', fontWeight: 'var(--fw-semi)' }}>
+                        {name}
+                      </strong>
+                      <p style={{ margin: '3px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {message.content}
+                      </p>
+                    </div>
+                    <time
+                      style={{ color: 'var(--color-text-disabled)', fontSize: 'var(--text-xs)', whiteSpace: 'nowrap' }}
+                      dateTime={message.createdAt}
+                    >
+                      {new Intl.DateTimeFormat('fr-CD', { dateStyle: 'short' }).format(new Date(message.createdAt))}
+                    </time>
                   </div>
-                  <div>
-                    <strong style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text)', fontWeight: 'var(--fw-semi)' }}>
-                      {msg.name}
-                    </strong>
-                    <p style={{ margin: '3px 0 0' }}>{msg.text}</p>
-                  </div>
-                  <time
-                    style={{ color: 'var(--color-text-disabled)', fontSize: 'var(--text-xs)', whiteSpace: 'nowrap' }}
-                    dateTime="2026-10-05"
-                  >
-                    {msg.time}
-                  </time>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
-
         </div>
       </div>
     </>

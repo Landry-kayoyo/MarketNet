@@ -115,11 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <i className={`bi ${isDark ? 'bi-sun' : 'bi-moon'}`} aria-hidden="true" />
           </button>
 
-          {/* Voir ma boutique */}
-          <Link href="/shops/t1" className="btn primary">
-            <i className="bi bi-shop" aria-hidden="true" />
-            <span className="label">Ma vitrine</span>
-          </Link>
+
 
           {/* Déconnexion */}
           <button className="btn" onClick={handleLogout} aria-label="Se déconnecter">

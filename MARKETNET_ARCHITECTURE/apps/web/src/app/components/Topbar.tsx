@@ -83,7 +83,7 @@ export default function Topbar({ activeNav }: TopbarProps) {
           aria-label={isDark ? 'Activer le mode clair' : 'Activer le mode sombre'}
           title={isDark ? 'Mode clair' : 'Mode sombre'}
         >
-          <i className={`bi ${isDark ? 'bi-sun' : 'bi-moon'}`} aria-hidden="true" />
+          <i className={`bi ${isDark ? 'bi-sun' : 'bi-moon'}`} aria-hidden="true" style={{ fontSize: '15px' }} />
         </button>
 
         {/* Panier */}
@@ -92,7 +92,7 @@ export default function Topbar({ activeNav }: TopbarProps) {
           onClick={() => setOpen(true)}
           aria-label={`Ouvrir le panier${count > 0 ? ` (${count} article${count > 1 ? 's' : ''})` : ''}`}
         >
-          <i className="bi bi-bag" aria-hidden="true" />
+          <i className="bi bi-bag" aria-hidden="true" style={{ fontSize: '15px' }} />
           <span className="label">Panier</span>
           {count > 0 && (
             <span className="cart-count" aria-hidden="true">{count}</span>
@@ -100,8 +100,11 @@ export default function Topbar({ activeNav }: TopbarProps) {
         </button>
 
         {/* Espace commerçant */}
-        <Link href="/login" className="btn primary" aria-label="Accéder à l'espace commerçant">
-          <i className="bi bi-person-circle" aria-hidden="true" />
+        <Link
+          href="/login"
+          className="btn topbar-login-btn"
+          aria-label="Accéder à l'espace commerçant"
+        >
           <span className="label">Mon espace</span>
         </Link>
       </div>

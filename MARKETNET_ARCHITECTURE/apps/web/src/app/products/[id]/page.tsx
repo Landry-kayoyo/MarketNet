@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCart } from '@/lib/cart';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
 
 const fmt = (cents: number) =>
-  new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', maximumFractionDigits: 0 }).format(cents);
+  new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', maximumFractionDigits: 0 }).format(cents / 100);
 
 type Product = {
   id: string; shopId: string; name: string; slug: string;
@@ -18,8 +18,8 @@ type Product = {
   images?: { url: string; isPrimary: boolean }[];
 };
 type Shop = {
-  id: string; name: string; slug: string; whatsapp: string | null;
-  branding?: { primary?: string; secondary?: string; radius?: string; imageFit?: string; logoShape?: string };
+  id: string; name: string; slug: string; whatsapp: string | null; logoUrl: string | null;
+  branding?: { primary?: string; secondary?: string; accent?: string; radius?: string; imageFit?: string; logoShape?: string };
 };
 
 export default function ProductDetailPage() {
@@ -32,25 +32,50 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
   const [feedback, setFeedback] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const { addItem, setOpen, itemCount } = useCart();
 
   useEffect(() => {
     async function load() {
       try {
-        const p: Product = await fetch(`${API_BASE}/api/v1/products/${id}`).then(r => r.json());
-        if (!p?.id) return;
+        const res = await fetch(`${API_BASE}/api/v1/products/${id}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setError(body?.message ?? `Erreur ${res.status}`);
+          return;
+        }
+        const p: Product = await res.json();
+        if (!p?.id) { setError('Produit introuvable.'); return; }
         setProduct(p);
         const [s, all]: [Shop, Product[]] = await Promise.all([
           fetch(`${API_BASE}/api/v1/shops/${p.shopId}`).then(r => r.json()),
           fetch(`${API_BASE}/api/v1/products`).then(r => r.json()),
         ]);
+        if (!s?.id) { setError('Boutique introuvable.'); return; }
         setShop(s);
         setSimilar((all as Product[]).filter(x => x.shopId === p.shopId && x.id !== p.id).slice(0, 4));
-      } catch { /* ignore */ }
+      } catch (e: any) {
+        setError(e?.message ?? 'Impossible de charger le produit.');
+      }
     }
     load();
   }, [id]);
+
+  if (error) {
+    return (
+      <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', background: 'var(--color-bg)', textAlign: 'center', padding: 24 }}>
+        <div>
+          <i className="bi bi-exclamation-triangle" style={{ fontSize: 48, color: 'var(--color-danger-text, #dc2626)' }} />
+          <h2 style={{ marginTop: 16, fontSize: 20, fontWeight: 700 }}>Produit non disponible</h2>
+          <p style={{ color: 'var(--color-text-muted, #6b7280)', marginTop: 8 }}>{error}</p>
+          <Link href="/" style={{ marginTop: 20, display: 'inline-block', padding: '10px 20px', background: 'var(--color-primary, #286b50)', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
+            ← Retour à l&apos;accueil
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!product || !shop) {
     return (
@@ -88,22 +113,25 @@ export default function ProductDetailPage() {
 
   return (
     <div className="app public-app detail-page">
-      <header className="topbar">
-        <Link href={`/shops/${shop.id}`} className="btn">
-          <i className="bi bi-arrow-left" />
-          <span className="label">Boutique</span>
-        </Link>
-        <Link href="/" className="brand brand-btn" style={{ textDecoration: 'none' }}>MarketNet</Link>
+      <header className="topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="shop-topbar-logo">
+            {shop.logoUrl ? (
+              <img src={shop.logoUrl} alt={shop.name} />
+            ) : (
+              <span className="shop-topbar-logo-fallback">
+                <i className="bi bi-shop" />
+              </span>
+            )}
+          </div>
+          <Link href="/" className="brand" style={{ textDecoration: 'none', margin: 0 }}>MarketNet</Link>
+        </div>
         <div className="top-actions">
           <button className="btn cart-pill" onClick={() => setOpen(true)}>
             <i className="bi bi-bag" />
             <span className="label">Panier</span>
             {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
           </button>
-          <Link href="/login" className="btn">
-            <i className="bi bi-person-circle" />
-            <span className="label">Espace commerçant</span>
-          </Link>
         </div>
       </header>
 
@@ -112,9 +140,10 @@ export default function ProductDetailPage() {
         style={{
           ['--shop-primary' as string]: primaryColor,
           ['--shop-secondary' as string]: b.secondary ?? '#182b24',
+          ['--shop-accent' as string]: b.accent ?? '#d6a84f',
           ['--shop-radius' as string]: b.radius ?? '17px',
           ['--shop-image-fit' as string]: b.imageFit ?? 'cover',
-          ['--shop-logo-radius' as string]: b.logoShape === 'round' ? '50%' : '19px',
+          ['--shop-logo-radius' as string]: b.logoShape === 'round' || b.logoShape === '50%' ? '50%' : b.logoShape === 'square' || b.logoShape === '4px' ? '4px' : '16px',
         }}
       >
         <div className="breadcrumbs">
@@ -215,15 +244,6 @@ export default function ProductDetailPage() {
             )}
 
             <div className="detail-actions" style={{ marginTop: 12 }}>
-              {whatsappMsg ? (
-                <a href={whatsappMsg} target="_blank" rel="noreferrer" className="btn success">
-                  <i className="bi bi-whatsapp" /> Contacter {shop.name}
-                </a>
-              ) : (
-                <button className="btn success" disabled>
-                  <i className="bi bi-whatsapp" /> WhatsApp non renseigné
-                </button>
-              )}
               <Link href={`/shops/${shop.id}`} className="btn">Voir la boutique</Link>
             </div>
           </div>
@@ -258,8 +278,8 @@ export default function ProductDetailPage() {
       </main>
 
       {whatsappMsg && (
-        <a href={whatsappMsg} target="_blank" rel="noreferrer" className="whatsapp-float">
-          <i className="bi bi-whatsapp" /><span>WhatsApp</span>
+        <a href={whatsappMsg} target="_blank" rel="noreferrer" className="shop-fab" aria-label="Contacter sur WhatsApp">
+          <i className="bi bi-whatsapp" />
         </a>
       )}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Topbar from '../components/Topbar';
+import ProductsCatalog from './ProductsCatalog';
 import { fetchPublicApi } from '@/lib/api';
 
 type Product = {
@@ -29,16 +30,26 @@ type Category = {
   description: string | null;
 };
 
+type Shop = { id: string; name: string };
+
 const formatPrice = (cents: number) =>
   new Intl.NumberFormat('fr-CD', {
     style: 'currency',
     currency: 'CDF',
     maximumFractionDigits: 0
-  }).format(cents);
+  }).format(cents / 100);
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string | string[]; category?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const initialQuery = Array.isArray(params.q) ? params.q[0] ?? '' : params.q ?? '';
+  const initialCategory = Array.isArray(params.category) ? params.category[0] ?? '' : params.category ?? '';
   let products: Product[] = [];
   let categories: Category[] = [];
+  let shops: Shop[] = [];
   let error: string | null = null;
 
   try {
@@ -46,6 +57,11 @@ export default async function ProductsPage() {
       fetchPublicApi<Product[]>('/api/v1/products'),
       fetchPublicApi<Category[]>('/api/v1/products/categories'),
     ]);
+    try {
+      shops = await fetchPublicApi<Shop[]>('/api/v1/shops');
+    } catch {
+      // Le catalogue reste consultable si la liste des boutiques est indisponible.
+    }
   } catch (err) {
     error = err instanceof Error ? err.message : 'Impossible de charger le catalogue.';
   }
@@ -72,68 +88,13 @@ export default async function ProductsPage() {
             </div>
           ) : (
             <>
-              <div className="hero-search" style={{ marginTop: 0, maxWidth: '100%' }}>
-                <i className="bi bi-search home-search-icon" aria-hidden="true" />
-                <input aria-label="Recherche produit" placeholder="Rechercher un produit, une marque..." />
-                <button type="button" className="btn primary" style={{ whiteSpace: 'nowrap' }}>
-                  Rechercher
-                </button>
-              </div>
-
-              <div className="pills" style={{ marginTop: 20, marginBottom: 20 }}>
-                <button type="button" className="btn primary">
-                  Tous les produits
-                </button>
-                {categories.map((category) => (
-                  <button key={category.id} type="button" className="btn">
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="product-grid" id="homeProducts">
-                {products.length === 0 ? (
-                  <div className="state-box" style={{ gridColumn: '1 / -1' }}>
-                    <i className="bi bi-box-seam" style={{ fontSize: 32, color: 'var(--color-text-disabled)', marginBottom: 12, display: 'block' }} />
-                    <strong style={{ display: 'block', color: 'var(--color-text)', marginBottom: 6 }}>Aucun produit</strong>
-                    <p style={{ margin: 0, fontSize: 13 }}>Le catalogue est vide pour le moment.</p>
-                  </div>
-                ) : (
-                  products.map((product) => {
-                    const imgSrc = product.images?.find((i) => i.isPrimary)?.url ?? product.images?.[0]?.url ?? null;
-                    return (
-                      <Link key={product.id} href={`/products/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <article className="product-card">
-                          <div
-                            className="product-media"
-                            style={imgSrc ? { ['--media-bg' as string]: `url(${imgSrc})` } : {}}
-                          >
-                            {imgSrc ? (
-                              <img src={imgSrc} alt={product.name} loading="lazy" />
-                            ) : (
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-disabled)', fontSize: 32 }}>
-                                <i className="bi bi-image" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="product-body">
-                            <span className="tag">{categories.find(c => c.id === product.categoryId)?.name || 'Produit'}</span>
-                            <h3>{product.name}</h3>
-                            <div className="product-shopline">
-                              <i className="bi bi-shop" aria-hidden="true" />
-                              <span>Boutique MarketNet</span>
-                            </div>
-                            <div className="brand-row">
-                              {product.isFeatured && <span className="brand-chip"><i className="bi bi-star-fill" style={{ color: 'var(--color-accent)' }} /> À la une</span>}
-                            </div>
-                            <div className="price">{formatPrice(product.priceCents)}</div>
-                          </div>
-                        </article>
-                      </Link>
-                    );
-                  })
-                )}
-              </div>
+              <ProductsCatalog
+                products={products}
+                categories={categories}
+                shopNames={Object.fromEntries(shops.map((shop) => [shop.id, shop.name]))}
+                initialQuery={initialQuery}
+                initialCategory={initialCategory}
+              />
             </>
           )}
         </section>
