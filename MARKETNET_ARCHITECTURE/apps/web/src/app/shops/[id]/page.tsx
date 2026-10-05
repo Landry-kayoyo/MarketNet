@@ -45,9 +45,9 @@ type Product = {
 };
 
 const formatPrice = (cents: number) =>
-  new Intl.NumberFormat('fr-FR', {
+  new Intl.NumberFormat('fr-CD', {
     style: 'currency',
-    currency: 'XAF',
+    currency: 'CDF',
     maximumFractionDigits: 0
   }).format(cents);
 
@@ -69,8 +69,8 @@ export default async function ShopDetailPage({ params }: { params: { id: string 
   const shopProducts = products.filter((product) => product.shopId === shop.id && product.isPublished);
   
   const b = shop.branding || {};
-  const primaryColor = b.primary || '#2563eb';
-  const secondaryColor = b.secondary || '#0f172a';
+  const primaryColor = b.primary || '#286b50';
+  const secondaryColor = b.secondary || '#182b24';
 
   return (
     <div className="app public-app store-app">
@@ -80,7 +80,7 @@ export default async function ShopDetailPage({ params }: { params: { id: string 
         </Link>
         <button className="brand brand-btn">MarketNet</button>
         <nav className="public-nav">
-          <button style={{ background: '#eff6ff', color: '#1d4ed8' }}>Boutique</button>
+          <button style={{ background: 'var(--color-primary-muted)', color: 'var(--color-primary-text)' }}>Boutique</button>
           <button>Produits</button>
           <button>À propos</button>
         </nav>
@@ -192,7 +192,7 @@ export default async function ShopDetailPage({ params }: { params: { id: string 
                         {imgSrc ? (
                           <img src={imgSrc} alt={product.name} loading="lazy" />
                         ) : (
-                          <i className="bi bi-image" style={{ fontSize: 32, color: '#94a3b8' }} />
+                          <i className="bi bi-image" style={{ fontSize: 32, color: 'var(--color-text-disabled)' }} />
                         )}
                       </div>
                       <div className="product-body">

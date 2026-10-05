@@ -145,7 +145,7 @@ export function useCart() {
 // ── Formatter ────────────────────────────────────────────────────────────────
 
 const fmt = (cents: number) =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(cents);
+  new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', maximumFractionDigits: 0 }).format(cents);
 
 // ── Cart Drawer ──────────────────────────────────────────────────────────────
 
@@ -195,7 +195,7 @@ export function CartDrawer() {
         <div className="cart-head">
           <div>
             <h2>
-              {step === 'success' ? '✅ Commande confirmée' : step === 'checkout' ? 'Votre commande' : 'Mon panier'}
+              {step === 'success' ? 'Commande confirmée' : step === 'checkout' ? 'Votre commande' : 'Mon panier'}
             </h2>
             <p>
               {step === 'success'
@@ -214,7 +214,7 @@ export function CartDrawer() {
           {/* Succès */}
           {step === 'success' && (
             <div className="cart-empty">
-              <div className="cart-empty-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+              <div className="cart-empty-icon cart-success-icon">
                 <i className="bi bi-check-circle" />
               </div>
               <h3>Commande passée !</h3>
@@ -229,14 +229,14 @@ export function CartDrawer() {
           {step === 'checkout' && (
             <form id="checkout-form" onSubmit={handleCheckout}>
               {/* Récap commande */}
-              <div style={{ marginBottom: 16, padding: '12px', borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <div className="cart-recap">
                 {items.map(item => (
-                  <div key={item.productId} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 13 }}>
+                  <div key={item.productId} className="cart-recap-row">
                     <span>{item.name} ×{item.quantity}</span>
                     <strong>{fmt(item.priceCents * item.quantity)}</strong>
                   </div>
                 ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid #e2e8f0', fontWeight: 800, fontSize: 15 }}>
+                <div className="cart-recap-total">
                   <span>Total</span><span>{fmt(totalCents)}</span>
                 </div>
               </div>
@@ -250,28 +250,23 @@ export function CartDrawer() {
               <div className="checkout-form" style={{ display: 'grid', gap: 11 }}>
                 <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 650 }}>
                   Votre nom *
-                  <input placeholder="Jean Dupont" value={form.name} onChange={set('name')} required
-                    style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 11, fontSize: 13 }} />
+                  <input placeholder="Ex. : Aline Mukendi" value={form.name} onChange={set('name')} required />
                 </label>
                 <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 650 }}>
                   Téléphone *
-                  <input type="tel" placeholder="+237 6XX XXX XXX" value={form.phone} onChange={set('phone')} required
-                    style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 11, fontSize: 13 }} />
+                  <input type="tel" placeholder="+243 81 234 5678" value={form.phone} onChange={set('phone')} required />
                 </label>
                 <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 650 }}>
                   Adresse de livraison
-                  <input placeholder="Quartier, rue, ville…" value={form.address} onChange={set('address')}
-                    style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 11, fontSize: 13 }} />
+                  <input placeholder="Quartier, rue, commune…" value={form.address} onChange={set('address')} />
                 </label>
                 <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 650 }}>
                   Ville
-                  <input placeholder="Douala, Yaoundé…" value={form.city} onChange={set('city')}
-                    style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 11, fontSize: 13 }} />
+                  <input placeholder="Kinshasa, Goma, Lubumbashi…" value={form.city} onChange={set('city')} />
                 </label>
                 <label style={{ display: 'grid', gap: 5, fontSize: 12, fontWeight: 650 }}>
                   Notes pour le commerçant
-                  <textarea placeholder="Taille, couleur, instructions…" value={form.notes} onChange={set('notes')}
-                    style={{ minHeight: 70, border: '1px solid #e2e8f0', borderRadius: 10, padding: 11, fontSize: 13, resize: 'vertical' }} />
+                  <textarea placeholder="Taille, couleur, instructions…" value={form.notes} onChange={set('notes')} />
                 </label>
               </div>
             </form>
@@ -290,7 +285,7 @@ export function CartDrawer() {
               <>
                 {items.map(item => (
                   <div key={item.productId} className="cart-item">
-                    <div style={{
+                    <div className="cart-item-photo" style={{
                       width: 66, height: 66, borderRadius: 12, flexShrink: 0,
                       background: item.imageUrl ? undefined : 'linear-gradient(135deg, #e0e9f5, #c7d7ee)',
                       display: 'grid', placeItems: 'center', color: '#94a3b8', overflow: 'hidden',

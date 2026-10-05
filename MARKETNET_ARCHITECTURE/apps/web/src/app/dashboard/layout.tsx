@@ -29,9 +29,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     // Sync theme
     const theme = localStorage.getItem('mn-theme');
-    if (theme === 'dark') {
-      setIsDark(true);
-      document.documentElement.setAttribute('data-theme', 'dark');
+    if (theme === 'dark' || theme === 'light') {
+      setIsDark(theme === 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
     }
   }, [router]);
 
@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('mn-theme', 'dark');
     } else {
-      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
       localStorage.setItem('mn-theme', 'light');
     }
   }

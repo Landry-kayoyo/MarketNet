@@ -30,9 +30,9 @@ type Category = {
 };
 
 const formatPrice = (cents: number) =>
-  new Intl.NumberFormat('fr-FR', {
+  new Intl.NumberFormat('fr-CD', {
     style: 'currency',
-    currency: 'XAF',
+    currency: 'CDF',
     maximumFractionDigits: 0
   }).format(cents);
 
@@ -66,8 +66,8 @@ export default async function ProductsPage() {
 
           {error ? (
             <div className="state-box">
-              <i className="bi bi-exclamation-triangle" style={{ fontSize: 32, color: '#ef4444', marginBottom: 12, display: 'block' }} />
-              <strong style={{ display: 'block', color: '#0f172a', marginBottom: 6 }}>Erreur de chargement</strong>
+              <i className="bi bi-exclamation-triangle" style={{ fontSize: 32, color: 'var(--color-danger)', marginBottom: 12, display: 'block' }} />
+              <strong style={{ display: 'block', color: 'var(--color-text)', marginBottom: 6 }}>Erreur de chargement</strong>
               <p style={{ margin: 0, fontSize: 13 }}>{error}</p>
             </div>
           ) : (
@@ -94,8 +94,8 @@ export default async function ProductsPage() {
               <div className="product-grid" id="homeProducts">
                 {products.length === 0 ? (
                   <div className="state-box" style={{ gridColumn: '1 / -1' }}>
-                    <i className="bi bi-box-seam" style={{ fontSize: 32, color: '#94a3b8', marginBottom: 12, display: 'block' }} />
-                    <strong style={{ display: 'block', color: '#0f172a', marginBottom: 6 }}>Aucun produit</strong>
+                    <i className="bi bi-box-seam" style={{ fontSize: 32, color: 'var(--color-text-disabled)', marginBottom: 12, display: 'block' }} />
+                    <strong style={{ display: 'block', color: 'var(--color-text)', marginBottom: 6 }}>Aucun produit</strong>
                     <p style={{ margin: 0, fontSize: 13 }}>Le catalogue est vide pour le moment.</p>
                   </div>
                 ) : (
@@ -111,7 +111,7 @@ export default async function ProductsPage() {
                             {imgSrc ? (
                               <img src={imgSrc} alt={product.name} loading="lazy" />
                             ) : (
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', fontSize: 32 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-disabled)', fontSize: 32 }}>
                                 <i className="bi bi-image" />
                               </div>
                             )}
@@ -124,7 +124,7 @@ export default async function ProductsPage() {
                               <span>Boutique MarketNet</span>
                             </div>
                             <div className="brand-row">
-                              {product.isFeatured && <span className="brand-chip"><i className="bi bi-star-fill" style={{ color: '#f59e0b' }} /> À la une</span>}
+                              {product.isFeatured && <span className="brand-chip"><i className="bi bi-star-fill" style={{ color: 'var(--color-accent)' }} /> À la une</span>}
                             </div>
                             <div className="price">{formatPrice(product.priceCents)}</div>
                           </div>

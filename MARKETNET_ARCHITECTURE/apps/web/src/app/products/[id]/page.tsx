@@ -8,7 +8,7 @@ import { useCart } from '@/lib/cart';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 const fmt = (cents: number) =>
-  new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(cents);
+  new Intl.NumberFormat('fr-CD', { style: 'currency', currency: 'CDF', maximumFractionDigits: 0 }).format(cents);
 
 type Product = {
   id: string; shopId: string; name: string; slug: string;
@@ -54,8 +54,8 @@ export default function ProductDetailPage() {
 
   if (!product || !shop) {
     return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f6f8fc' }}>
-        <i className="bi bi-arrow-repeat" style={{ fontSize: 32, animation: 'spin 1s linear infinite', color: '#94a3b8' }} />
+      <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', background: 'var(--color-bg)' }}>
+        <i className="bi bi-arrow-repeat" style={{ fontSize: 32, animation: 'spin 1s linear infinite', color: 'var(--color-primary)' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -64,7 +64,7 @@ export default function ProductDetailPage() {
   const imgs = product.images?.length ? product.images.map(i => i.url) : [''];
   const primaryImg = product.images?.find(i => i.isPrimary)?.url ?? imgs[0] ?? '';
   const b = shop.branding ?? {};
-  const primaryColor = b.primary ?? '#2563eb';
+  const primaryColor = b.primary ?? '#286b50';
 
   function handleAdd(openDrawer = false) {
     addItem({
@@ -111,7 +111,7 @@ export default function ProductDetailPage() {
         className="content store-themed"
         style={{
           ['--shop-primary' as string]: primaryColor,
-          ['--shop-secondary' as string]: b.secondary ?? '#0f172a',
+          ['--shop-secondary' as string]: b.secondary ?? '#182b24',
           ['--shop-radius' as string]: b.radius ?? '17px',
           ['--shop-image-fit' as string]: b.imageFit ?? 'cover',
           ['--shop-logo-radius' as string]: b.logoShape === 'round' ? '50%' : '19px',
@@ -131,7 +131,7 @@ export default function ProductDetailPage() {
             {imgs[imgIdx] ? (
               <img className="detail-main-image" src={imgs[imgIdx]} alt={product.name} />
             ) : (
-              <div className="detail-main-image" style={{ display: 'grid', placeItems: 'center', color: '#94a3b8', fontSize: 40 }}>
+              <div className="detail-main-image" style={{ display: 'grid', placeItems: 'center', color: 'var(--color-text-disabled)', fontSize: 40 }}>
                 <i className="bi bi-image" />
               </div>
             )}
@@ -162,7 +162,7 @@ export default function ProductDetailPage() {
               </div>
             )}
             <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-              {product.stockQuantity > 0 ? `✓ En stock · ${product.stockQuantity} disponible(s)` : '✗ Indisponible'}
+              {product.stockQuantity > 0 ? `En stock · ${product.stockQuantity} disponible(s)` : 'Indisponible'}
             </div>
 
             <p>{product.description ?? product.shortDescription ?? 'Produit disponible dans cette boutique.'}</p>
@@ -187,9 +187,9 @@ export default function ProductDetailPage() {
                 {feedback && (
                   <div style={{
                     marginTop: 8, padding: '9px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                    background: feedback.ok ? '#f0fdf4' : '#fff1f2',
-                    color: feedback.ok ? '#15803d' : '#b91c1c',
-                    border: `1px solid ${feedback.ok ? '#bbf7d0' : '#fecaca'}`,
+                    background: feedback.ok ? 'var(--color-success-subtle)' : 'var(--color-danger-subtle)',
+                    color: feedback.ok ? 'var(--color-success-text)' : 'var(--color-danger-text)',
+                    border: `1px solid ${feedback.ok ? 'var(--color-success-muted)' : 'var(--color-danger-muted)'}`,
                   }}>
                     <i className={`bi ${feedback.ok ? 'bi-check-circle' : 'bi-exclamation-triangle'}`} style={{ marginRight: 6 }} />
                     {feedback.msg}
@@ -207,7 +207,7 @@ export default function ProductDetailPage() {
               </div>
             ) : (
               <div className="buy-box">
-                <div style={{ padding: '14px', textAlign: 'center', color: '#b91c1c', fontWeight: 700, fontSize: 13 }}>
+                <div style={{ padding: '14px', textAlign: 'center', color: 'var(--color-danger-text)', fontWeight: 700, fontSize: 13 }}>
                   <i className="bi bi-x-circle" style={{ marginRight: 6 }} />
                   Produit actuellement indisponible
                 </div>
@@ -243,7 +243,7 @@ export default function ProductDetailPage() {
                   <article key={x.id} className="product-card similar-card">
                     {img
                       ? <img src={img} alt={x.name} />
-                      : <div style={{ width: '100%', height: 190, display: 'grid', placeItems: 'center', background: '#f1f5f9', color: '#94a3b8', fontSize: 32 }}><i className="bi bi-image" /></div>}
+                      : <div style={{ width: '100%', height: 190, display: 'grid', placeItems: 'center', background: 'var(--color-surface-2)', color: 'var(--color-text-disabled)', fontSize: 32 }}><i className="bi bi-image" /></div>}
                     <div className="product-body">
                       <h3>{x.name}</h3>
                       <div className="price">{fmt(x.priceCents)}</div>

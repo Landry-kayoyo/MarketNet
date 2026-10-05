@@ -15,9 +15,9 @@ export default function Topbar({ activeNav }: TopbarProps) {
 
   useEffect(() => {
     const stored = localStorage.getItem('mn-theme');
-    if (stored === 'dark') {
-      setIsDark(true);
-      document.documentElement.setAttribute('data-theme', 'dark');
+    if (stored === 'dark' || stored === 'light') {
+      setIsDark(stored === 'dark');
+      document.documentElement.setAttribute('data-theme', stored);
     }
   }, []);
 
@@ -34,7 +34,7 @@ export default function Topbar({ activeNav }: TopbarProps) {
       document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('mn-theme', 'dark');
     } else {
-      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
       localStorage.setItem('mn-theme', 'light');
     }
   }

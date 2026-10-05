@@ -31,7 +31,7 @@ export default function DashboardHomePage() {
       {/* ── En-tête ── */}
       <div className="page-head dashboard-head">
         <div>
-          <h1>Bonjour 👋</h1>
+          <h1>Bonjour</h1>
           <p>Ma Boutique · votre activité en un coup d&apos;œil.</p>
         </div>
         <Link href="/dashboard/products" className="btn primary">
@@ -148,7 +148,7 @@ export default function DashboardHomePage() {
               </Link>
               <button className="btn" disabled>
                 <i className="bi bi-bar-chart" aria-hidden="true" />
-                Analytics
+                Analyses
               </button>
             </div>
           </section>

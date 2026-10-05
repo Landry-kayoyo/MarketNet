@@ -60,23 +60,23 @@ export default async function ShopsPage() {
 
           {error ? (
             <div className="state-box">
-              <i className="bi bi-exclamation-triangle" style={{ fontSize: 32, color: '#ef4444', marginBottom: 12, display: 'block' }} />
-              <strong style={{ display: 'block', color: '#0f172a', marginBottom: 6 }}>Erreur de chargement</strong>
+              <i className="bi bi-exclamation-triangle" style={{ fontSize: 32, color: 'var(--color-danger)', marginBottom: 12, display: 'block' }} />
+              <strong style={{ display: 'block', color: 'var(--color-text)', marginBottom: 6 }}>Erreur de chargement</strong>
               <p style={{ margin: 0, fontSize: 13 }}>{error}</p>
             </div>
           ) : (
             <div className="home-shop-grid">
               {shops.length === 0 ? (
                 <div className="state-box" style={{ gridColumn: '1 / -1' }}>
-                  <i className="bi bi-shop" style={{ fontSize: 32, color: '#94a3b8', marginBottom: 12, display: 'block' }} />
-                  <strong style={{ display: 'block', color: '#0f172a', marginBottom: 6 }}>Aucune boutique publiée</strong>
+                  <i className="bi bi-shop" style={{ fontSize: 32, color: 'var(--color-text-disabled)', marginBottom: 12, display: 'block' }} />
+                  <strong style={{ display: 'block', color: 'var(--color-text)', marginBottom: 6 }}>Aucune boutique publiée</strong>
                   <p style={{ margin: 0, fontSize: 13 }}>Les boutiques apparaîtront ici dès leur activation.</p>
                 </div>
               ) : (
                 shops.map((shop) => {
                   const coverImg = shop.coverUrl;
                   const logoImg = shop.logoUrl;
-                  const shopColor = shop.branding?.primary || '#2563eb';
+                  const shopColor = shop.branding?.primary || '#286b50';
                   
                   return (
                     <article key={shop.id} className="home-shop-card" style={{ ['--shop-accent' as string]: shopColor }}>
