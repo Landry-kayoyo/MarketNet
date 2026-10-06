@@ -61,21 +61,8 @@ if (process.env.VERCEL_ENV === 'production') {
     throw new Error('DIRECT_URL is required for production Prisma migrations.');
   }
 
-  // The database may be in an inconsistent state where _prisma_migrations records
-  // migrations as applied but the actual tables are missing (e.g. after a Supabase
-  // project reset). Roll back both migrations so migrate deploy re-applies them
-  // from scratch against the current idempotent SQL.
-  // allowFailure=true because the migration may not exist in _prisma_migrations at all
-  // on a brand-new database, in which case resolve exits with a non-zero code.
-  run(
-    ['--workspace', 'apps/api', 'run', 'prisma:resolve', '--', '--rolled-back', '20261004_marketnet_init'],
-    { allowFailure: true },
-  );
-  run(
-    ['--workspace', 'apps/api', 'run', 'prisma:resolve', '--', '--rolled-back', '20261005_guest_checkout_remove_client_role'],
-    { allowFailure: true },
-  );
-
+  // migrate deploy is idempotent: skips already-applied migrations.
+  // The DB is now in a clean state — no resolve step needed.
   run(['--workspace', 'apps/api', 'run', 'prisma:deploy']);
 } else {
   console.log('Skipping database migration: this is not a Vercel Production build.');
