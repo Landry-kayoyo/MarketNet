@@ -39,7 +39,7 @@ function clearPrismaCache() {
   }
 }
 
-function run(args) {
+function run(args, { allowFailure = false } = {}) {
   const result = spawnSync(npm, args, {
     cwd: root,
     env: process.env,
@@ -48,7 +48,7 @@ function run(args) {
   });
 
   if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (!allowFailure && result.status !== 0) process.exit(result.status ?? 1);
 }
 
 clearPrismaCache();
@@ -61,13 +61,20 @@ if (process.env.VERCEL_ENV === 'production') {
     throw new Error('DIRECT_URL is required for production Prisma migrations.');
   }
 
-  // Resolve any failed migration recorded in _prisma_migrations before deploying.
-  // This handles the case where a previous deployment attempted a migration that
-  // partially ran and left a "failed" entry blocking future deploys (Prisma P3009).
-  run([
-    '--workspace', 'apps/api', 'run', 'prisma:resolve',
-    '--', '--rolled-back', '20261005_guest_checkout_remove_client_role',
-  ]);
+  // The database may be in an inconsistent state where _prisma_migrations records
+  // migrations as applied but the actual tables are missing (e.g. after a Supabase
+  // project reset). Roll back both migrations so migrate deploy re-applies them
+  // from scratch against the current idempotent SQL.
+  // allowFailure=true because the migration may not exist in _prisma_migrations at all
+  // on a brand-new database, in which case resolve exits with a non-zero code.
+  run(
+    ['--workspace', 'apps/api', 'run', 'prisma:resolve', '--', '--rolled-back', '20261005_marketnet_init'],
+    { allowFailure: true },
+  );
+  run(
+    ['--workspace', 'apps/api', 'run', 'prisma:resolve', '--', '--rolled-back', '20261005_guest_checkout_remove_client_role'],
+    { allowFailure: true },
+  );
 
   run(['--workspace', 'apps/api', 'run', 'prisma:deploy']);
 } else {

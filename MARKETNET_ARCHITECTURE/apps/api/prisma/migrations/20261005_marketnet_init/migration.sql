@@ -1,17 +1,20 @@
--- CreateEnum
-CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED', 'BANNED');
-CREATE TYPE "ShopStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED', 'SUSPENDED');
-CREATE TYPE "ProductStatus" AS ENUM ('DRAFT', 'ACTIVE', 'OUT_OF_STOCK', 'ARCHIVED');
-CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED');
-CREATE TYPE "ReviewStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
-CREATE TYPE "MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ', 'ARCHIVED');
-CREATE TYPE "NotificationType" AS ENUM ('ORDER', 'MESSAGE', 'REVIEW', 'SYSTEM');
-CREATE TYPE "AnalyticsEventType" AS ENUM ('PAGE_VIEW', 'PRODUCT_VIEW', 'PRODUCT_SEARCH', 'PRODUCT_ADD_TO_CART', 'ORDER_CREATED', 'ORDER_PAID', 'ORDER_CANCELLED', 'MESSAGE_SENT', 'REVIEW_CREATED', 'SHOP_VIEW');
-CREATE TYPE "PlatformSettingCategory" AS ENUM ('GLOBAL', 'SHOP', 'PRODUCT', 'ORDER', 'SECURITY');
-CREATE TYPE "PermissionScope" AS ENUM ('GLOBAL', 'SHOP', 'PRODUCT', 'ORDER', 'USER');
+-- Idempotent version: safe to re-apply on a database that already has
+-- some or all of these objects (CREATE ... IF NOT EXISTS / DO/EXCEPTION).
+
+-- CreateEnum (DO/EXCEPTION so existing enums are silently skipped)
+DO $$ BEGIN CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED', 'BANNED'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "ShopStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED', 'SUSPENDED'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "ProductStatus" AS ENUM ('DRAFT', 'ACTIVE', 'OUT_OF_STOCK', 'ARCHIVED'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "ReviewStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "MessageStatus" AS ENUM ('SENT', 'DELIVERED', 'READ', 'ARCHIVED'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "NotificationType" AS ENUM ('ORDER', 'MESSAGE', 'REVIEW', 'SYSTEM'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "AnalyticsEventType" AS ENUM ('PAGE_VIEW', 'PRODUCT_VIEW', 'PRODUCT_SEARCH', 'PRODUCT_ADD_TO_CART', 'ORDER_CREATED', 'ORDER_PAID', 'ORDER_CANCELLED', 'MESSAGE_SENT', 'REVIEW_CREATED', 'SHOP_VIEW'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "PlatformSettingCategory" AS ENUM ('GLOBAL', 'SHOP', 'PRODUCT', 'ORDER', 'SECURITY'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "PermissionScope" AS ENUM ('GLOBAL', 'SHOP', 'PRODUCT', 'ORDER', 'USER'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- CreateTable users
-CREATE TABLE "users" (
+CREATE TABLE IF NOT EXISTS "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "phone" TEXT,
@@ -26,12 +29,12 @@ CREATE TABLE "users" (
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
-CREATE INDEX "users_email_idx" ON "users"("email");
-CREATE INDEX "users_status_idx" ON "users"("status");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
+CREATE INDEX IF NOT EXISTS "users_email_idx" ON "users"("email");
+CREATE INDEX IF NOT EXISTS "users_status_idx" ON "users"("status");
 
 -- CreateTable roles
-CREATE TABLE "roles" (
+CREATE TABLE IF NOT EXISTS "roles" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -42,11 +45,11 @@ CREATE TABLE "roles" (
     CONSTRAINT "roles_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "roles_name_key" ON "roles"("name");
-CREATE UNIQUE INDEX "roles_slug_key" ON "roles"("slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "roles_name_key" ON "roles"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "roles_slug_key" ON "roles"("slug");
 
 -- CreateTable permissions
-CREATE TABLE "permissions" (
+CREATE TABLE IF NOT EXISTS "permissions" (
     "id" TEXT NOT NULL,
     "key" TEXT NOT NULL,
     "resource" TEXT NOT NULL,
@@ -59,11 +62,11 @@ CREATE TABLE "permissions" (
     CONSTRAINT "permissions_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "permissions_key_key" ON "permissions"("key");
-CREATE INDEX "permissions_resource_action_idx" ON "permissions"("resource", "action");
+CREATE UNIQUE INDEX IF NOT EXISTS "permissions_key_key" ON "permissions"("key");
+CREATE INDEX IF NOT EXISTS "permissions_resource_action_idx" ON "permissions"("resource", "action");
 
 -- CreateTable user_roles
-CREATE TABLE "user_roles" (
+CREATE TABLE IF NOT EXISTS "user_roles" (
     "userId" TEXT NOT NULL,
     "roleId" TEXT NOT NULL,
     "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -71,11 +74,11 @@ CREATE TABLE "user_roles" (
     CONSTRAINT "user_roles_pkey" PRIMARY KEY ("userId", "roleId")
 );
 
-CREATE INDEX "user_roles_userId_idx" ON "user_roles"("userId");
-CREATE INDEX "user_roles_roleId_idx" ON "user_roles"("roleId");
+CREATE INDEX IF NOT EXISTS "user_roles_userId_idx" ON "user_roles"("userId");
+CREATE INDEX IF NOT EXISTS "user_roles_roleId_idx" ON "user_roles"("roleId");
 
 -- CreateTable role_permissions
-CREATE TABLE "role_permissions" (
+CREATE TABLE IF NOT EXISTS "role_permissions" (
     "roleId" TEXT NOT NULL,
     "permissionId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -83,11 +86,11 @@ CREATE TABLE "role_permissions" (
     CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("roleId", "permissionId")
 );
 
-CREATE INDEX "role_permissions_roleId_idx" ON "role_permissions"("roleId");
-CREATE INDEX "role_permissions_permissionId_idx" ON "role_permissions"("permissionId");
+CREATE INDEX IF NOT EXISTS "role_permissions_roleId_idx" ON "role_permissions"("roleId");
+CREATE INDEX IF NOT EXISTS "role_permissions_permissionId_idx" ON "role_permissions"("permissionId");
 
 -- CreateTable shops
-CREATE TABLE "shops" (
+CREATE TABLE IF NOT EXISTS "shops" (
     "id" TEXT NOT NULL,
     "ownerId" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -111,13 +114,13 @@ CREATE TABLE "shops" (
     CONSTRAINT "shops_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "shops_slug_key" ON "shops"("slug");
-CREATE INDEX "shops_ownerId_idx" ON "shops"("ownerId");
-CREATE INDEX "shops_status_idx" ON "shops"("status");
-CREATE INDEX "shops_city_idx" ON "shops"("city");
+CREATE UNIQUE INDEX IF NOT EXISTS "shops_slug_key" ON "shops"("slug");
+CREATE INDEX IF NOT EXISTS "shops_ownerId_idx" ON "shops"("ownerId");
+CREATE INDEX IF NOT EXISTS "shops_status_idx" ON "shops"("status");
+CREATE INDEX IF NOT EXISTS "shops_city_idx" ON "shops"("city");
 
 -- CreateTable categories
-CREATE TABLE "categories" (
+CREATE TABLE IF NOT EXISTS "categories" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -131,12 +134,12 @@ CREATE TABLE "categories" (
     CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
-CREATE INDEX "categories_parentId_idx" ON "categories"("parentId");
-CREATE INDEX "categories_isActive_idx" ON "categories"("isActive");
+CREATE UNIQUE INDEX IF NOT EXISTS "categories_slug_key" ON "categories"("slug");
+CREATE INDEX IF NOT EXISTS "categories_parentId_idx" ON "categories"("parentId");
+CREATE INDEX IF NOT EXISTS "categories_isActive_idx" ON "categories"("isActive");
 
 -- CreateTable products
-CREATE TABLE "products" (
+CREATE TABLE IF NOT EXISTS "products" (
     "id" TEXT NOT NULL,
     "shopId" TEXT NOT NULL,
     "categoryId" TEXT,
@@ -157,15 +160,15 @@ CREATE TABLE "products" (
     CONSTRAINT "products_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "products_sku_key" ON "products"("sku");
-CREATE UNIQUE INDEX "products_shopId_slug_key" ON "products"("shopId", "slug");
-CREATE INDEX "products_shopId_idx" ON "products"("shopId");
-CREATE INDEX "products_categoryId_idx" ON "products"("categoryId");
-CREATE INDEX "products_status_idx" ON "products"("status");
-CREATE INDEX "products_isPublished_idx" ON "products"("isPublished");
+CREATE UNIQUE INDEX IF NOT EXISTS "products_sku_key" ON "products"("sku");
+CREATE UNIQUE INDEX IF NOT EXISTS "products_shopId_slug_key" ON "products"("shopId", "slug");
+CREATE INDEX IF NOT EXISTS "products_shopId_idx" ON "products"("shopId");
+CREATE INDEX IF NOT EXISTS "products_categoryId_idx" ON "products"("categoryId");
+CREATE INDEX IF NOT EXISTS "products_status_idx" ON "products"("status");
+CREATE INDEX IF NOT EXISTS "products_isPublished_idx" ON "products"("isPublished");
 
 -- CreateTable product_images
-CREATE TABLE "product_images" (
+CREATE TABLE IF NOT EXISTS "product_images" (
     "id" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
     "url" TEXT NOT NULL,
@@ -178,11 +181,11 @@ CREATE TABLE "product_images" (
     CONSTRAINT "product_images_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "product_images_productId_idx" ON "product_images"("productId");
-CREATE INDEX "product_images_isPrimary_idx" ON "product_images"("isPrimary");
+CREATE INDEX IF NOT EXISTS "product_images_productId_idx" ON "product_images"("productId");
+CREATE INDEX IF NOT EXISTS "product_images_isPrimary_idx" ON "product_images"("isPrimary");
 
 -- CreateTable product_variants
-CREATE TABLE "product_variants" (
+CREATE TABLE IF NOT EXISTS "product_variants" (
     "id" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -197,11 +200,11 @@ CREATE TABLE "product_variants" (
     CONSTRAINT "product_variants_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "product_variants_productId_idx" ON "product_variants"("productId");
-CREATE INDEX "product_variants_isActive_idx" ON "product_variants"("isActive");
+CREATE INDEX IF NOT EXISTS "product_variants_productId_idx" ON "product_variants"("productId");
+CREATE INDEX IF NOT EXISTS "product_variants_isActive_idx" ON "product_variants"("isActive");
 
 -- CreateTable product_specifications
-CREATE TABLE "product_specifications" (
+CREATE TABLE IF NOT EXISTS "product_specifications" (
     "id" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -212,10 +215,12 @@ CREATE TABLE "product_specifications" (
     CONSTRAINT "product_specifications_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "product_specifications_productId_idx" ON "product_specifications"("productId");
+CREATE INDEX IF NOT EXISTS "product_specifications_productId_idx" ON "product_specifications"("productId");
 
 -- CreateTable orders
-CREATE TABLE "orders" (
+-- NOTE: userId and shopId are intentionally NOT NULL here; migration
+-- 20261005_guest_checkout_remove_client_role drops those constraints afterwards.
+CREATE TABLE IF NOT EXISTS "orders" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "shopId" TEXT NOT NULL,
@@ -237,12 +242,12 @@ CREATE TABLE "orders" (
     CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "orders_userId_idx" ON "orders"("userId");
-CREATE INDEX "orders_shopId_idx" ON "orders"("shopId");
-CREATE INDEX "orders_status_idx" ON "orders"("status");
+CREATE INDEX IF NOT EXISTS "orders_userId_idx" ON "orders"("userId");
+CREATE INDEX IF NOT EXISTS "orders_shopId_idx" ON "orders"("shopId");
+CREATE INDEX IF NOT EXISTS "orders_status_idx" ON "orders"("status");
 
 -- CreateTable order_items
-CREATE TABLE "order_items" (
+CREATE TABLE IF NOT EXISTS "order_items" (
     "id" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
@@ -256,11 +261,11 @@ CREATE TABLE "order_items" (
     CONSTRAINT "order_items_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "order_items_orderId_idx" ON "order_items"("orderId");
-CREATE INDEX "order_items_productId_idx" ON "order_items"("productId");
+CREATE INDEX IF NOT EXISTS "order_items_orderId_idx" ON "order_items"("orderId");
+CREATE INDEX IF NOT EXISTS "order_items_productId_idx" ON "order_items"("productId");
 
 -- CreateTable messages
-CREATE TABLE "messages" (
+CREATE TABLE IF NOT EXISTS "messages" (
     "id" TEXT NOT NULL,
     "shopId" TEXT,
     "orderId" TEXT,
@@ -276,14 +281,14 @@ CREATE TABLE "messages" (
     CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "messages_shopId_idx" ON "messages"("shopId");
-CREATE INDEX "messages_orderId_idx" ON "messages"("orderId");
-CREATE INDEX "messages_senderId_idx" ON "messages"("senderId");
-CREATE INDEX "messages_receiverId_idx" ON "messages"("receiverId");
-CREATE INDEX "messages_status_idx" ON "messages"("status");
+CREATE INDEX IF NOT EXISTS "messages_shopId_idx" ON "messages"("shopId");
+CREATE INDEX IF NOT EXISTS "messages_orderId_idx" ON "messages"("orderId");
+CREATE INDEX IF NOT EXISTS "messages_senderId_idx" ON "messages"("senderId");
+CREATE INDEX IF NOT EXISTS "messages_receiverId_idx" ON "messages"("receiverId");
+CREATE INDEX IF NOT EXISTS "messages_status_idx" ON "messages"("status");
 
 -- CreateTable reviews
-CREATE TABLE "reviews" (
+CREATE TABLE IF NOT EXISTS "reviews" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "shopId" TEXT NOT NULL,
@@ -299,12 +304,12 @@ CREATE TABLE "reviews" (
     CONSTRAINT "reviews_rating_check" CHECK ("rating" >= 1 AND "rating" <= 5)
 );
 
-CREATE INDEX "reviews_shopId_idx" ON "reviews"("shopId");
-CREATE INDEX "reviews_productId_idx" ON "reviews"("productId");
-CREATE INDEX "reviews_status_idx" ON "reviews"("status");
+CREATE INDEX IF NOT EXISTS "reviews_shopId_idx" ON "reviews"("shopId");
+CREATE INDEX IF NOT EXISTS "reviews_productId_idx" ON "reviews"("productId");
+CREATE INDEX IF NOT EXISTS "reviews_status_idx" ON "reviews"("status");
 
 -- CreateTable notifications
-CREATE TABLE "notifications" (
+CREATE TABLE IF NOT EXISTS "notifications" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" "NotificationType" NOT NULL,
@@ -318,11 +323,11 @@ CREATE TABLE "notifications" (
     CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "notifications_userId_idx" ON "notifications"("userId");
-CREATE INDEX "notifications_isRead_idx" ON "notifications"("isRead");
+CREATE INDEX IF NOT EXISTS "notifications_userId_idx" ON "notifications"("userId");
+CREATE INDEX IF NOT EXISTS "notifications_isRead_idx" ON "notifications"("isRead");
 
 -- CreateTable analytics_events
-CREATE TABLE "analytics_events" (
+CREATE TABLE IF NOT EXISTS "analytics_events" (
     "id" TEXT NOT NULL,
     "userId" TEXT,
     "shopId" TEXT,
@@ -336,13 +341,13 @@ CREATE TABLE "analytics_events" (
     CONSTRAINT "analytics_events_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "analytics_events_eventType_idx" ON "analytics_events"("eventType");
-CREATE INDEX "analytics_events_shopId_idx" ON "analytics_events"("shopId");
-CREATE INDEX "analytics_events_productId_idx" ON "analytics_events"("productId");
-CREATE INDEX "analytics_events_userId_idx" ON "analytics_events"("userId");
+CREATE INDEX IF NOT EXISTS "analytics_events_eventType_idx" ON "analytics_events"("eventType");
+CREATE INDEX IF NOT EXISTS "analytics_events_shopId_idx" ON "analytics_events"("shopId");
+CREATE INDEX IF NOT EXISTS "analytics_events_productId_idx" ON "analytics_events"("productId");
+CREATE INDEX IF NOT EXISTS "analytics_events_userId_idx" ON "analytics_events"("userId");
 
 -- CreateTable platform_settings
-CREATE TABLE "platform_settings" (
+CREATE TABLE IF NOT EXISTS "platform_settings" (
     "id" TEXT NOT NULL,
     "key" TEXT NOT NULL,
     "value" TEXT NOT NULL,
@@ -354,11 +359,11 @@ CREATE TABLE "platform_settings" (
     CONSTRAINT "platform_settings_pkey" PRIMARY KEY ("id")
 );
 
-CREATE UNIQUE INDEX "platform_settings_key_key" ON "platform_settings"("key");
-CREATE INDEX "platform_settings_category_idx" ON "platform_settings"("category");
+CREATE UNIQUE INDEX IF NOT EXISTS "platform_settings_key_key" ON "platform_settings"("key");
+CREATE INDEX IF NOT EXISTS "platform_settings_category_idx" ON "platform_settings"("category");
 
 -- CreateTable refresh_tokens
-CREATE TABLE "refresh_tokens" (
+CREATE TABLE IF NOT EXISTS "refresh_tokens" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "tokenHash" TEXT NOT NULL,
@@ -369,118 +374,35 @@ CREATE TABLE "refresh_tokens" (
     CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "refresh_tokens_userId_idx" ON "refresh_tokens"("userId");
-CREATE INDEX "refresh_tokens_expiresAt_idx" ON "refresh_tokens"("expiresAt");
+CREATE INDEX IF NOT EXISTS "refresh_tokens_userId_idx" ON "refresh_tokens"("userId");
+CREATE INDEX IF NOT EXISTS "refresh_tokens_expiresAt_idx" ON "refresh_tokens"("expiresAt");
 
--- AddForeignKey
-ALTER TABLE "user_roles"
-    ADD CONSTRAINT "user_roles_userId_fkey"
-    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "user_roles"
-    ADD CONSTRAINT "user_roles_roleId_fkey"
-    FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "role_permissions"
-    ADD CONSTRAINT "role_permissions_roleId_fkey"
-    FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "role_permissions"
-    ADD CONSTRAINT "role_permissions_permissionId_fkey"
-    FOREIGN KEY ("permissionId") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "shops"
-    ADD CONSTRAINT "shops_ownerId_fkey"
-    FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "categories"
-    ADD CONSTRAINT "categories_parentId_fkey"
-    FOREIGN KEY ("parentId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "products"
-    ADD CONSTRAINT "products_shopId_fkey"
-    FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "products"
-    ADD CONSTRAINT "products_categoryId_fkey"
-    FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "product_images"
-    ADD CONSTRAINT "product_images_productId_fkey"
-    FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "product_variants"
-    ADD CONSTRAINT "product_variants_productId_fkey"
-    FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "product_specifications"
-    ADD CONSTRAINT "product_specifications_productId_fkey"
-    FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "orders"
-    ADD CONSTRAINT "orders_userId_fkey"
-    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
-ALTER TABLE "orders"
-    ADD CONSTRAINT "orders_shopId_fkey"
-    FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
-ALTER TABLE "order_items"
-    ADD CONSTRAINT "order_items_orderId_fkey"
-    FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "order_items"
-    ADD CONSTRAINT "order_items_productId_fkey"
-    FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
-ALTER TABLE "order_items"
-    ADD CONSTRAINT "order_items_productVariantId_fkey"
-    FOREIGN KEY ("productVariantId") REFERENCES "product_variants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "messages"
-    ADD CONSTRAINT "messages_shopId_fkey"
-    FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "messages"
-    ADD CONSTRAINT "messages_orderId_fkey"
-    FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "messages"
-    ADD CONSTRAINT "messages_senderId_fkey"
-    FOREIGN KEY ("senderId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "messages"
-    ADD CONSTRAINT "messages_receiverId_fkey"
-    FOREIGN KEY ("receiverId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "reviews"
-    ADD CONSTRAINT "reviews_userId_fkey"
-    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "reviews"
-    ADD CONSTRAINT "reviews_shopId_fkey"
-    FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "reviews"
-    ADD CONSTRAINT "reviews_productId_fkey"
-    FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "notifications"
-    ADD CONSTRAINT "notifications_userId_fkey"
-    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
-ALTER TABLE "analytics_events"
-    ADD CONSTRAINT "analytics_events_userId_fkey"
-    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "analytics_events"
-    ADD CONSTRAINT "analytics_events_shopId_fkey"
-    FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "analytics_events"
-    ADD CONSTRAINT "analytics_events_productId_fkey"
-    FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
-ALTER TABLE "refresh_tokens"
-    ADD CONSTRAINT "refresh_tokens_userId_fkey"
-    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (DO/EXCEPTION so existing constraints are silently skipped)
+DO $$ BEGIN ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "shops" ADD CONSTRAINT "shops_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "categories" ADD CONSTRAINT "categories_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "products" ADD CONSTRAINT "products_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "product_images" ADD CONSTRAINT "product_images_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "product_specifications" ADD CONSTRAINT "product_specifications_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "orders" ADD CONSTRAINT "orders_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "orders" ADD CONSTRAINT "orders_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "order_items" ADD CONSTRAINT "order_items_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "order_items" ADD CONSTRAINT "order_items_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "order_items" ADD CONSTRAINT "order_items_productVariantId_fkey" FOREIGN KEY ("productVariantId") REFERENCES "product_variants"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "messages" ADD CONSTRAINT "messages_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "messages" ADD CONSTRAINT "messages_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "messages" ADD CONSTRAINT "messages_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "messages" ADD CONSTRAINT "messages_receiverId_fkey" FOREIGN KEY ("receiverId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "reviews" ADD CONSTRAINT "reviews_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "reviews" ADD CONSTRAINT "reviews_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "reviews" ADD CONSTRAINT "reviews_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "analytics_events" ADD CONSTRAINT "analytics_events_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "analytics_events" ADD CONSTRAINT "analytics_events_shopId_fkey" FOREIGN KEY ("shopId") REFERENCES "shops"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "analytics_events" ADD CONSTRAINT "analytics_events_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE; EXCEPTION WHEN duplicate_object THEN null; END $$;
