@@ -68,7 +68,7 @@ if (process.env.VERCEL_ENV === 'production') {
   // allowFailure=true because the migration may not exist in _prisma_migrations at all
   // on a brand-new database, in which case resolve exits with a non-zero code.
   run(
-    ['--workspace', 'apps/api', 'run', 'prisma:resolve', '--', '--rolled-back', '20261005_marketnet_init'],
+    ['--workspace', 'apps/api', 'run', 'prisma:resolve', '--', '--rolled-back', '20261004_marketnet_init'],
     { allowFailure: true },
   );
   run(
