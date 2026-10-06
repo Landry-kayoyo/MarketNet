@@ -1,6 +1,6 @@
 {
-  "framework": "nextjs",
-  "installCommand": "npm install --include=dev --no-audit --no-fund --loglevel=error",
+  "framework": null,
   "buildCommand": "npm run vercel-build",
-  "devCommand": "npm run dev"
+  "installCommand": "npm install --include=dev --no-audit --no-fund",
+  "outputDirectory": "apps/web/.next"
 }
