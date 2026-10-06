@@ -13,9 +13,6 @@
     "build:web": "npm --workspace apps/web run build",
     "build:api": "npm --workspace apps/api run build",
     "vercel-build": "node scripts/vercel-build.cjs"
-  },
-  "overrides": {
-    "glob": "^11.0.0"
   }
 }
 

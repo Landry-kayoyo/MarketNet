@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "installCommand": "npm install --include=dev",
+  "installCommand": "npm install --include=dev --no-audit --no-fund --loglevel=error",
   "buildCommand": "npm run vercel-build",
   "devCommand": "npm run dev"
 }
