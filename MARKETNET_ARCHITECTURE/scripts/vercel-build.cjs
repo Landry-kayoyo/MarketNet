@@ -61,6 +61,14 @@ if (process.env.VERCEL_ENV === 'production') {
     throw new Error('DIRECT_URL is required for production Prisma migrations.');
   }
 
+  // Resolve any failed migration recorded in _prisma_migrations before deploying.
+  // This handles the case where a previous deployment attempted a migration that
+  // partially ran and left a "failed" entry blocking future deploys (Prisma P3009).
+  run([
+    '--workspace', 'apps/api', 'run', 'prisma:resolve',
+    '--', '--rolled-back', '20261005_guest_checkout_remove_client_role',
+  ]);
+
   run(['--workspace', 'apps/api', 'run', 'prisma:deploy']);
 } else {
   console.log('Skipping database migration: this is not a Vercel Production build.');
